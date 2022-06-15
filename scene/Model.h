@@ -1,7 +1,7 @@
 #pragma once
-#include "math/math.hpp"
-#include "common/common.hpp"
-#include "Texture.hpp"
+#include "math/math.h"
+#include "common/common.h"
+#include "Texture.h"
 
 struct Vertex {
 	Vector3f position;
@@ -109,8 +109,6 @@ enum TEXTURE_TYPE
 	TEXTURE_TYPE_NUM = TEXTURE_TYPE_UNKNOWN + 1
 };
 
-
-
 struct Material{
 	int32 textureIndex[TEXTURE_TYPE_NUM];
 
@@ -122,18 +120,23 @@ struct Material{
 class Mesh {
 	friend class Model;
 public:
-	const vector<Vertex>& GetVertices() { return vertices; }
-	const vector<uint32>& GetIndices() { return indices; }
-private:
 	Mesh(const vector<Vertex>& vertices,
 		const  vector<uint32>& indices);
 
+	const vector<Vertex>& GetVertices() { return vertices; }
+	const vector<uint32>& GetIndices() { return indices; }
+private:
 	vector<Vertex> vertices;
 	vector<uint32> indices;
 };
 
 class Model {
 public:
+	Model(const vector<ptr<Mesh>>& meshs,
+		const vector<uint32>& meshMaterialIndices,
+		const vector<Material>& materials,
+		const vector<ptr<Texture>>& textures);
+
 	static ptr<Model> Load(const String& path);
 
 	uint32 MeshCount() { return meshs.size(); }
@@ -147,10 +150,6 @@ public:
 	ptr<Texture> GetTexture(uint32 i);
 
 private:
-	Model(const vector<ptr<Mesh>>& meshs,
-		const vector<uint32>& meshMaterialIndices,
-		const vector<Material>& materials,
-		const vector<ptr<Texture>>& textures);
 
 	vector<ptr<Mesh>> 	 meshs;
 	vector<uint32>		 meshMaterialIndices;

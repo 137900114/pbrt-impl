@@ -1,26 +1,5 @@
-#include "bvh.hpp"
+#include "bvh.h"
 
-//cpu bvh generating
-struct BVHLeafNode {
-    int axis;
-    bool isLeaf;
-    uint32 lchild, rchild;
-    Bound3f bound;
-    uint32 primitiveIndex, primitiveCount;
-};
-
-
-struct BVHPrimitiveInfo {
-    BVHPrimitive primitive;
-    uint32       primitiveIndex;
-    uint32       motornCode;
-
-    BVHPrimitiveInfo(BVHPrimitive primitive,uint32 primitiveIndex,uint32 code):
-        primitive(primitive),primitiveIndex(primitiveIndex),motornCode(code)
-    {}
-
-    BVHPrimitiveInfo():motornCode(0),primitiveIndex(0) {}
-};
 
 
 //copied from pbrt
@@ -151,7 +130,7 @@ static uint32 BuildNode(vector<BVHLeafNode>& buildNodes,
 //sort primitives by morton code
 //generate hireachy 
 //fit bounding-boxes
-void BVHTree::Build(const vector<BVHPrimitive>& _primitives,ptr<BVHPrimitiveIntersector> intersector) {
+void BVHTree::Build(const vector<BVHPrimitive>& _primitives,BVHPrimitiveIntersector* intersector) {
     Clear();
 
     al_assert(intersector == nullptr, "BVHTree::Build : the intersector should not be nullptr");
@@ -197,18 +176,31 @@ BVHIntersectInfo BVHTree::Intersect(const Ray& r) {
 
     BVHIntersectInfo info;
 
-    while (toVisitCount != 0) {
+    while (toVisitCount != 0 && toVisitCount < maxiumDepth) {
         BVHLeafNode& node = leafNodes[--toVisitCount];
-        if (Math::ray_intersect(node.bound,p)) {
+        if (Math::ray_intersect(node.bound, r)) {
             if (node.isLeaf) {
+                BVHPrimitiveInfo& primInfo = primitiveInfo[node.primitiveIndex];
                 al_for(i,0,node.primitiveCount) {
-                    BVHPrimitiveInfo& primInfo = primitiveInfo[node.primitiveIndex + i];
-                    intersector->Intersect(r, primInfo.primitiveIndex);
+                    if (Math::ray_intersect(primInfo.primitive.aabb, r)) {
+                        Intersection inter = intersector->Intersect(r, primInfo.primitiveIndex + i);
+                        if (inter.intersected && inter.t < info.intersection.t) {
+                            info.intersection = inter;
+                            info.primitiveIndex = node.primitiveIndex + 1;
+                        }
+                    }
                     
                 }
             }
             else {
-
+                if (r.d.a[node.axis] > 0) {
+                    toVisit[toVisitCount++] = node.rchild;
+                    toVisit[toVisitCount++] = node.lchild;
+                }
+                else {
+                    toVisit[toVisitCount++] = node.lchild;
+                    toVisit[toVisitCount++] = node.rchild;
+                }
             }
         }
     }
@@ -220,5 +212,5 @@ BVHIntersectInfo BVHTree::Intersect(const Ray& r) {
 void BVHTree::Clear() {
     leafNodes.clear();
     primitiveInfo.clear();
-    intersector = nullptr;
+    al_delete(intersector);
 }

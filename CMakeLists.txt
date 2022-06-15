@@ -24,6 +24,11 @@ add_custom_command(TARGET Alex POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:assimp>  $<TARGET_FILE_DIR:Alex>
   COMMAND_EXPAND_LISTS
   )
+
+add_custom_command(TARGET Alex POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optick>  $<TARGET_FILE_DIR:Alex>
+  COMMAND_EXPAND_LISTS
+  )
   
 add_dependencies(Alex spdlog stb)
-target_link_libraries(Alex spdlog stb assimp)
+target_link_libraries(Alex spdlog stb assimp optick)

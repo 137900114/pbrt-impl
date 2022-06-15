@@ -1,4 +1,4 @@
-#include "Model.hpp"
+#include "Model.h"
 
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
@@ -37,7 +37,7 @@ static void processAiNode(vector<ptr<Mesh>>& meshs,vector<uint32> materialIndex,
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 
 		std::vector<Vertex> vertices;
-		std::vector<uint16_t>		  indices;
+		std::vector<uint32>		  indices;
 
 		vertices.resize(mesh->mNumVertices);
 		for (size_t j = 0; j != mesh->mNumVertices; j++) {
@@ -83,7 +83,7 @@ static ptr<Model> LoadByAssimp(const String& pathName) {
 
 	FILE* f;
 	if (errno_t error = _wfopen_s(&f, pathName.c_str(), L"rb"); error != 0) {
-		al_log("Model::Load : fail to open file {0} , reason {1}", pathName.c_str(), error);
+		al_log("Model::Load : fail to open file {0} , reason {1}", WideString2String(pathName), error);
 		return nullptr;
 	}
 	fseek(f, 0, SEEK_END);
@@ -104,7 +104,9 @@ static ptr<Model> LoadByAssimp(const String& pathName) {
 
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr) {
-		al_log("Model::Load : fail to load model file {0} reason {1}", pathName.c_str(), imp.GetErrorString());
+		al_log("Model::Load : fail to load model file {0} reason {1}",WideString2String(pathName), 
+			string(imp.GetErrorString())
+		);
 		return nullptr;
 	}
 
@@ -137,7 +139,7 @@ static ptr<Model> LoadByAssimp(const String& pathName) {
 				}
 				ptr<Texture> tex = Texture::Load(texPath);
 				if (tex == nullptr) {
-					al_log("Model::Load : fail to load texture {0}",texPath.c_str());
+					al_log("Model::Load : fail to load texture {0}",WideString2String(texPath));
 					return -1;
 				}
 				else {
@@ -211,7 +213,19 @@ ptr<Model> Model::Load(const String& path) {
 		return LoadByAssimp(path);
 	}
 	else {
-		al_log("Model::Load : file {0} 's extension is not supported",path.c_str());
+		al_log("Model::Load : file {0} 's extension is not supported", WideString2String(path));
 	}
 	return nullptr;
 }
+
+Mesh::Mesh(const vector<Vertex>& vertices,
+	const  vector<uint32>& indices):vertices(vertices),indices(indices){
+
+}
+
+Model::Model(const vector<ptr<Mesh>>& meshs,
+	const vector<uint32>& meshMaterialIndices,
+	const vector<Material>& materials,
+	const vector<ptr<Texture>>& textures):
+	meshs(meshs),meshMaterialIndices(meshMaterialIndices),
+	materials(materials),textures(textures){ }

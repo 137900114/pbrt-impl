@@ -1,4 +1,4 @@
-file(GLOB ACCEL_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
+file(GLOB ACCEL_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 file(GLOB ACCEL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 message("files in common directory \n source files ${ACCEL_SOURCE}\n header files ${ACCEL_HEADER}")

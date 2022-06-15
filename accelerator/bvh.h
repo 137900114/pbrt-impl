@@ -1,6 +1,6 @@
 #pragma once
-#include "common/common.hpp"
-#include "math/math.hpp"
+#include "common/common.h"
+#include "math/math.h"
 
 struct BVHPrimitive{
     Bound3f aabb;
@@ -13,7 +13,13 @@ struct BVHPrimitive{
     BVHPrimitive() {}
 };
 
-struct BVHLeafNode;
+struct BVHLeafNode {
+    int axis;
+    bool isLeaf;
+    uint32 lchild, rchild;
+    Bound3f bound;
+    uint32 primitiveIndex, primitiveCount;
+};
 
 struct BVHPrimitiveInfo {
     BVHPrimitive primitive;
@@ -47,9 +53,9 @@ public:
 //use LBVH method by default
 class BVHTree {
 public:
-    BVHTree(){}
+    BVHTree():intersector(nullptr){}
 
-    void Build(const vector<BVHPrimitive>& primitives,ptr<BVHPrimitiveIntersector> intersector);
+    void Build(const vector<BVHPrimitive>& primitives,BVHPrimitiveIntersector* intersector);
     void Clear();
     BVHIntersectInfo Intersect(const Ray& p);
 
@@ -57,5 +63,5 @@ public:
 private:
     vector<BVHLeafNode>             leafNodes;
     vector<BVHPrimitiveInfo>        primitiveInfo;
-    ptr<BVHPrimitiveIntersector>    intersector;
+    BVHPrimitiveIntersector*    intersector;
 };

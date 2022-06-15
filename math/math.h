@@ -1,11 +1,10 @@
-#include "common/common.hpp"
+#pragma once
+#include "common/common.h"
 #include <cmath>
 
 #define al_fequal(f1,f2) abs(f1 - f2) < 1e5
 
-namespace Math {
-    constexpr float inifinity = FLT_MAX;
-}
+#define infinity std::numeric_limits<float>::max()
 
 struct Vector2f {
     union {
@@ -74,18 +73,19 @@ struct Quaternion {
     Vector4f val;
 
     Quaternion(const Quaternion& o):val(o.val) {}
-    Quaternion(Vector3f& axis, float angle);
+    Quaternion(const Vector3f& axis, float angle);
     Quaternion():val(0.f,0.f,0.f,1.f) {}
 
     const Quaternion& operator=(const Quaternion& q) {
         val = q.val;
+        return *this;
     }
 };
 
 struct Ray {
     Vector3f o, d;
     Vector3f invd;
-    Ray():d(1,0,0),invd(1,Math::inifinity,Math::inifinity) {}
+    Ray():d(1,0,0),invd(1,infinity,infinity) {}
     Ray(const Vector3f& o, const Vector3f& d) :o(o),d(d){
         invd.x = 1.f / d.x, invd.y = 1.f / d.y, invd.z = 1.f / d.z;
     }
@@ -140,7 +140,6 @@ struct Mat4x4{
 
 
 struct Bound3f {
-
     union {
         struct {
             Vector3f lower, upper;
@@ -168,22 +167,64 @@ struct Bound3f {
 };
 
 struct Transform {
+    Transform() :quat(Vector3f(0., 1., 0.), 0.) { RecomputeMatrix(); }
+    Transform(const Vector3f& position, const Quaternion& quat, const Vector3f& scale) :
+        position(position), quat(quat), scale(scale) {
+        RecomputeMatrix();
+    }
+    Transform(const Transform& other):position(other.position),
+        quat(other.quat),scale(other.scale),world(other.world),
+        transInvWorld(other.transInvWorld){}
+    
+    const Transform& operator=(const Transform& other) {
+        position = other.position;
+        quat = other.quat;
+        scale = other.scale;
+        world = other.world;
+        transInvWorld = other.transInvWorld;
+    }
+
+    void SetPosition(const Vector3f& position);
+    void SetRotation(const Quaternion& quat);
+    void SetScale(const Vector3f& scale);
+
+    const Vector3f& GetPosition() const { return position; }
+    const Quaternion& GetRotation() const { return quat; }
+    const Vector3f& GetScale() const { return scale; }
+    const Mat4x4& GetMatrix() const {return world;}
+    const Mat4x4& GetTransInvMatrix() const { return transInvWorld; }
+
+private:
+    void RecomputeMatrix();
+
     Vector3f position;
     Quaternion quat;
     Vector3f scale;
-    
-    Transform():quat(Vector3f(0.,1.,0.),0.){}
+
+    Mat4x4   world;
+    Mat4x4   transInvWorld;
 };
 
 struct Intersection {
     bool  intersected;
     float t;
     Vector2f uv;
+    Vector2f localUv;
     Vector3f position;
 };
 
 
+//TODO rewrite using concept in c++20
 namespace Math {
+    template<typename T>
+    T clamp(T a,T lower,T upper) {
+        return std::max(std::min(a, upper), lower);
+    }
+
+    float frac(float v) {
+        return v - (float)((uint32)v);
+    }
+
     Vector3f vmax(const Vector3f& a,const Vector3f& b);
 
     Vector3f vmin(const Vector3f& a,const Vector3f& b);
@@ -196,6 +237,14 @@ namespace Math {
 
     Vector3f cross(const Vector3f& a,const Vector3f& b);
 
+    Vector4f vsub(const Vector4f& a, const Vector4f& b);
+
+    Vector4f vadd(const Vector4f& a, const Vector4f& b);
+
+    Vector4f vmul(const Vector4f& a, float f);
+
+    Vector4f vdiv(const Vector4f& a, float f);
+
     Vector3f vsub(const Vector3f& a, const Vector3f& b);
 
     Vector3f vadd(const Vector3f& a, const Vector3f& b);
@@ -203,6 +252,14 @@ namespace Math {
     Vector3f vmul(const Vector3f& a, float f);
 
     Vector3f vdiv(const Vector3f& a, float f);
+
+    Vector2f vsub(const Vector2f& a, const Vector2f& b);
+
+    Vector2f vadd(const Vector2f& a, const Vector2f& b);
+
+    Vector2f vmul(const Vector2f& a, float f);
+
+    Vector2f vdiv(const Vector2f& a, float f);
 
     Mat4x4 multiply(const Mat4x4& a,const Mat4x4& b);
 
@@ -216,6 +273,8 @@ namespace Math {
 
     Vector3f bound_centorid(const Bound3f& b);
 
+    Mat4x4 transpose(const Mat4x4& m);
+
     Mat4x4 inverse(const Mat4x4& m);
 
     Mat4x4 projection(float aspectRatio,float fov,float near,float far);
@@ -227,6 +286,24 @@ namespace Math {
     Mat4x4 mat_scale(const Vector3f& scale);
 
     Mat4x4 mat_transform(const Vector3f& pos,const Quaternion& quat,const Vector3f& scale);
+
+    //v0 * (1 - b) + v1 * b
+    Vector2f interpolate2(const Vector2f& v0, const Vector2f& v1, float b);
+
+    //v0 * (1 - b) + v1 * b
+    Vector3f interpolate2(const Vector3f& v0, const Vector3f& v1, float b);
+    
+    //v0 * (1 - b) + v1 * b
+    Vector4f interpolate2(const Vector4f& v0, const Vector4f& v1, float b);
+
+    //v0 * (1 - u -  v) + v1 * u + v2 * v
+    Vector2f interpolate3(const Vector2f& v0, const Vector2f& v1, const Vector2f& v2, const Vector2f& uv);
+
+    //v0 * (1 - u -  v) + v1 * u + v2 * v
+    Vector3f interpolate3(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Vector2f& uv);
+
+    //v0 * (1 - u -  v) + v1 * u + v2 * v
+    Vector4f interpolate3(const Vector4f& v0, const Vector4f& v1, const Vector4f& v2, const Vector2f& uv);
 
     bool   ray_intersect(const Bound3f& bound,const Ray& r);
     

@@ -1,7 +1,6 @@
-#include "math.hpp"
+#include "math.h"
 
 namespace Math {
-
     Vector3f vmax(const Vector3f& a,const Vector3f& b) {
         return Vector3f(a.x > b.x ? a.x : b.x,
                         a.y > b.y ? a.y : b.y,
@@ -209,6 +208,24 @@ namespace Math {
         return Vector3f(a.x / f, a.y / f, a.z / f);
     }
 
+    Vector2f vsub(const Vector2f& a, const Vector2f& b) {
+        return Vector2f(a.x - b.x, a.y - b.y);
+    }
+
+    Vector2f vadd(const Vector2f& a, const Vector2f& b) {
+        return Vector2f(a.x + b.x, a.y + b.y);
+    }
+
+    Vector2f vmul(const Vector2f& a, float f) {
+        return Vector2f(a.x * f, a.y * f);
+    }
+
+    Vector2f vdiv(const Vector2f& a, float f) {
+        al_assert(al_fequal(f, 0), "divide zero error");
+        return Vector2f(a.x / f, a.x / f);
+    }
+
+
     Vector3f bound_centorid(const Bound3f& b) {
         float x = (b.upper.x + b.lower.x) * .5f;
         float y = (b.upper.y + b.lower.y) * .5f;
@@ -216,9 +233,56 @@ namespace Math {
         return Vector3f(x, y, z);
     }
 
+    Vector4f vsub(const Vector4f& a, const Vector4f& b) {
+        return Vector4f(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+    }
+
+    Vector4f vadd(const Vector4f& a, const Vector4f& b) {
+        return Vector4f(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+    }
+
+    Vector4f vmul(const Vector4f& a, float f) {
+        return Vector4f(a.x * f, a.y * f, a.z * f, a.w * f);
+    }
+
+    Vector4f vdiv(const Vector4f& a, float f) {
+        al_assert(al_fequal(f, 0), "Math::vdiv divide by zero");
+        return Vector4f(a.x / f, a.y / f, a.z / f, a.w / f);
+    }
+
+    //v0 * (1 - b) + v1 * b
+    Vector2f interpolate2(const Vector2f& v0, const Vector2f& v1, float b) {
+        return Math::vadd(Math::vmul(v0, 1.f - b), Math::vmul(v1, b));
+    }
+
+    //v0 * (1 - b) + v1 * b
+    Vector3f interpolate2(const Vector3f& v0, const Vector3f& v1, float b) {
+        return Math::vadd(Math::vmul(v0, 1.f - b), Math::vmul(v1, b));
+    }
+
+    //v0 * (1 - b) + v1 * b
+    Vector4f interpolate2(const Vector4f& v0, const Vector4f& v1, float b) {
+        return Math::vadd(Math::vmul(v0, 1.f - b), Math::vmul(v1, b));
+    }
+
+    //v0 * (1 - u -  v) + v1 * u + v2 * v
+    Vector2f interpolate3(const Vector2f& v0, const Vector2f& v1, const Vector2f& v2, const Vector2f& uv) {
+        return Math::vadd(Math::vadd(Math::vmul(v0, 1.f - uv.x - uv.y), Math::vmul(v1, uv.x)), Math::vmul(v2, uv.y));
+    }
+
+    //v0 * (1 - u -  v) + v1 * u + v2 * v
+    Vector3f interpolate3(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Vector2f& uv) {
+        return Math::vadd(Math::vadd(Math::vmul(v0, 1.f - uv.x - uv.y), Math::vmul(v1, uv.x)), Math::vmul(v2, uv.y));
+    }
+
+    //v0 * (1 - u -  v) + v1 * u + v2 * v
+    Vector4f interpolate3(const Vector4f& v0, const Vector4f& v1, const Vector4f& v2, const Vector2f& uv) {
+        return Math::vadd(Math::vadd(Math::vmul(v0, 1.f - uv.x - uv.y), Math::vmul(v1, uv.x)), Math::vmul(v2, uv.y));
+    }
+
 
     bool   ray_intersect(const Bound3f& bound, const Ray& r) {
-        Vector3f o = Math::vadd(r.o, Math::vmul(r.d, t));
+        const Vector3f& o = r.o;
         
         uint32 sign[3];
         sign[0] = r.d.x > 0, sign[1] = r.d.y > 0, sign[2] = r.d.z > 0;
@@ -239,8 +303,70 @@ namespace Math {
         return true;
     }
 
-    bool   ray_intersect(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3, const Ray& r,
+    bool   ray_intersect(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Ray& r,
         param_out float* t, param_out Vector2f* uv, param_out Vector3f* position) {
+        
+        Vector3f e1 = vsub(v1, v0);
+        Vector3f e2 = vsub(v2,v0);
+        // no need to normalize
+        Vector3f N = cross(e1, e2);//N 
+        float area2 = length(N);
 
+        // Step 1: finding P
+
+        // check if ray and plane are parallel ?
+        float NdotRayDirection = dot(N, r.d);
+        if (al_fequal(NdotRayDirection,0.f))  //almost 0 
+            return false;  //they are parallel so they don't intersect ! 
+
+        // compute t (equation 3)
+        *t = - (dot(N,vsub(r.o , v0))) / NdotRayDirection;
+
+        // check if the triangle is in behind the ray
+        if (t < 0) return false;  //the triangle is behind 
+
+        // compute the intersection point using equation 1
+        Vector3f P = vadd(vmul(r.d, *t),r.o);
+
+        float area = dot(N, N);
+
+        Vector3f Po = vsub(P, v0);
+        float uarea = dot(cross(e1, Po), N);
+        float varea = dot(cross(e2, Po), N);
+        
+        if (uarea < 0 || varea < 0 || (uarea + varea) > 1.f) return false;
+        *uv = Vector2f(uarea / area, varea / area);
+
+        return true;  //this ray hits the triangle 
     }
 };
+
+Quaternion::Quaternion(const Vector3f& axis, float angle) {
+    Vector3f n = Math::normalize(axis);
+    float halfAngle = angle * .5f;
+    float shAngle = sin(halfAngle), chAngle = cos(halfAngle);
+    val.x = axis.x * shAngle;
+    val.y = axis.y * shAngle;
+    val.z = axis.z * shAngle;
+    val.w = chAngle;
+}
+
+void Transform::SetPosition(const Vector3f& position) {
+    this->position = position;
+    RecomputeMatrix();
+}
+void Transform::SetRotation(const Quaternion& quat) {
+    this->quat = quat;
+    RecomputeMatrix();
+}
+
+void Transform::SetScale(const Vector3f& scale) {
+    this->scale = scale;
+    RecomputeMatrix();
+}
+
+void Transform::RecomputeMatrix() {
+    world = Math::mat_transform(position, quat, scale);
+
+    transInvWorld = Math::transpose(Math::inverse(world))
+}

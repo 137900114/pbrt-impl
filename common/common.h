@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 #include <new>
-
+#include <codecvt>
 using namespace std;
 
 #include <string.h>
@@ -31,34 +31,10 @@ using int8   = int8_t ;
 #define al_malloc(size) malloc((size))
 #define al_mfree(p)   free((p))
 
-template<typename T,typename ...Args>
-T* al_new_impl(Args... args) {
-	void* tmp = al_malloc(sizeof(T));
-	if (tmp) {
-		new(tmp) T(args...);
-	}
-	return (T*)tmp;
-}
 
-template<typename T,typename ...Args>
-T* al_new_arr_impl(uint32 count,Args... args) {
-	T* tmp = (T*)al_malloc(sizeof(T) * count);
-	al_for(i,0,count){
-		new(tmp + i) T(args...);
-	}
-	return tmp;
-}
-
-template<typename T>
-void al_delete_impl(T* p) {
-	p->~T();
-	al_mfree(p);
-}
-
-
-#define al_new(T,...)  al_new_impl<T>(__VA_ARGS__)
-#define al_new_arr(T,count,...) al_new_arr_impl<T>(count,__VA_ARGS__)
-#define al_delete(p)   al_delete_impl(p)
+#define al_new(T,...)  new T(__VA_ARGS__)
+#define al_new_arr(T,count,...) new T[count](__VA_ARGS__)
+#define al_delete(p)   delete p
 
 #define al_countof(arr) (sizeof(arr) / sizeof(*arr))
 
@@ -91,11 +67,11 @@ using String = wstring;
 #define al_string(s) L##s
 
 
-String ConvertToString(const std::wstring& s) {
+inline String ConvertToString(const std::wstring& s) {
 	return s;
 }
 
-String ConvertToString(const std::string& s) {
+inline String ConvertToString(const std::string& s) {
 	const char* chSrc = s.c_str();
 	size_t nDestSize = mbstowcs(NULL, chSrc, 0) + 1;
 	wchar_t* wchDest = new wchar_t[nDestSize];
@@ -106,5 +82,38 @@ String ConvertToString(const std::string& s) {
 	return wstrResult;
 }
 
+
+inline std::string WideString2String(const std::wstring& wstr)
+{
+	using convert_typeX = std::codecvt_utf8<wchar_t>;
+	std::wstring_convert<convert_typeX, wchar_t> converterX;
+	return converterX.to_bytes(wstr);
+}
+
 //an output parameter
 #define param_out 
+
+#include "optick/optick.h"
+
+//CPU
+#define al_profile_frame(name)				OPTICK_FRAME(name)
+//avaliable categroys
+//None,AI,Animation,Audio,Debug,Camera,Cloth
+//GameLogic,Input,Navigation,Network,Physics
+//Rendering,Scene,Script,Streaming,UI
+//VFX,Visibility,Wait,WaitEmpty
+// IO:
+// IO
+// GPU:
+//GPU_Cloth,GPU_Lighting,GPU_PostFX,GPU_Reflections
+//GPU_Scene,GPU_Shadows,GPU_UI,GPU_VFX,GPU_Water
+#define al_profile_event()					OPTICK_EVENT()
+#define al_profile_category(msg,categroy)	OPTICK_CATEGORY(msg,Optick::Category::##categroy)
+#define al_profile_thread(name)			    OPTICK_THREAD(name)
+#define al_profile_tag(name,...)		    OPTCIK_TAG(name,__VA_ARGS__)
+
+
+//Automation
+#define al_profile_start_capture()			OPTICK_START_CAPTURE()
+#define al_profile_stop_capture()			OPTICK_STOP_CAPTURE()
+#define al_profile_save_capture(file)       OPTICK_SAVE_CAPTURE(file)

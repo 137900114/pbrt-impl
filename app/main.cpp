@@ -1,7 +1,6 @@
-#include "common/common.hpp"
+#include "common/common.h"
 
 
 int main(){
-    al_log_initialize();
-    al_log_finalize();
+
 }
