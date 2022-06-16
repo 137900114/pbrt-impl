@@ -1,5 +1,6 @@
 #common only contains hpp files
-file(GLOB COMMON_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+file(GLOB COMMON_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+file(GLOB COMMON_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
-message("files in common directory \n source files ${COMMON_SOURCE}\n")
-target_sources(Alex PUBLIC ${COMMON_SOURCE})
+message("files in common directory \n header files ${COMMON_HEADER}\n source files ${COMMON_SOURCE}")
+target_sources(Alex PUBLIC ${COMMON_SOURCE} ${COMMON_HEADER})

@@ -5,6 +5,7 @@
 #define al_fequal(f1,f2) abs(f1 - f2) < 1e5
 
 #define infinity std::numeric_limits<float>::max()
+#define infinity_i std::numeric_limits<uint32>::max()
 
 struct Vector2f {
     union {
