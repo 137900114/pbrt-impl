@@ -9,17 +9,17 @@ public:
 
 	~Sampler();
 
-	float*	GetSample(const char* name);
-	float*	GetSample(uint32 index);
+	const float*	GetSample(const char* name);
+	const float*	GetSample(uint32 index);
 
 	uint32  GetSampleIndex(const char* name);
 	
-	bool	NextSample();
-	void	NextPixel();
-
+	virtual bool	NextSample();
+	virtual void	NextPixel(uint32 x,uint32 y);
 protected:
-	virtual float SampleDimension(uint32 sampleIndex,uint32 dimension) = 0;
+	virtual float SampleDimension(uint32 dimension) = 0;
 
+	uint32 pixelX, pixelY;
 	uint32 samplePerPixel;
 	int32  currentSampleIndex;
 	rtti::Struct* pStruct;

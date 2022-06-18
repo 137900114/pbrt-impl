@@ -20,6 +20,10 @@ struct Vector2f {
     Vector2f(const Vector2f& v) {
         copy_memory(this, &v);
     }
+    Vector2f(const float* f) {
+        x = f[0], y = f[1];
+    }
+
     Vector2f(float x,float y):x(x),y(y) {}
 };
 
@@ -37,6 +41,9 @@ struct Vector3f {
     }
     Vector3f(const Vector3f& vec) {
         copy_memory(this,&vec);
+    }
+    Vector3f(const float* f) {
+        x = f[0], y = f[1], z = f[2];
     }
 
     Vector3f(float x, float y, float z):x(x),y(y),z(z) {}
@@ -59,6 +66,9 @@ struct Vector4f {
     }
     Vector4f(const Vector4f& vec) {
         copy_memory(this, &vec);
+    }
+    Vector4f(const float* f) {
+        x = f[0], y = f[1], z = f[2], w = f[3];
     }
 
     Vector4f(float x, float y, float z,float w) :x(x), y(y), z(z),w(w){}
@@ -222,9 +232,7 @@ namespace Math {
         return std::max(std::min(a, upper), lower);
     }
 
-    float frac(float v) {
-        return v - (float)((uint32)v);
-    }
+    float frac(float v);
 
     Vector3f vmax(const Vector3f& a,const Vector3f& b);
 

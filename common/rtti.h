@@ -2,7 +2,6 @@
 #include "common/common.h"
 #include "math/math.h"
 
-
 namespace rtti {
 
 	template<typename T>
@@ -97,6 +96,11 @@ namespace rtti {
 		Variable(const char* name) {
 			InitializeStructVariable(name, TypeTrait<T>::name, TypeTrait<T>::size);
 		}
-	};
-	
+	};	
 }
+
+
+#define RTTI_STRUCT(S) struct S : public rtti::Struct{\
+	S():rtti::Struct(#S){}
+
+#define RTTI_STRUCT_END()};

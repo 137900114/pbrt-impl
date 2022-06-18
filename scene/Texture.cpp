@@ -99,5 +99,6 @@ Vector4f Texture::Sample(Vector2f uv, TEXTURE_SAMPLER sampler) {
 			);
 		}
 	}
-
+	al_assert(false , "Texture::Sample : invalid texture sampler type");
+	return Vector4f();
 }

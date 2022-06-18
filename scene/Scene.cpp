@@ -115,7 +115,9 @@ ModelID Scene::LoadModel(const String& path) {
 	modelPaths.push_back(path);
 	if (model != nullptr) {
 		models.push_back(model);
+		return (int32)(models.size() - 1);
 	}
+	return -1;
 }
 
 SceneObjectID Scene::CreateSceneObject(ptr<Model> model, const Transform& transform) {

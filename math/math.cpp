@@ -1,6 +1,11 @@
 #include "math.h"
 
 namespace Math {
+    
+    float frac(float v) {
+        return v - (float)((uint32)v);
+    }
+
     Vector3f vmax(const Vector3f& a,const Vector3f& b) {
         return Vector3f(a.x > b.x ? a.x : b.x,
                         a.y > b.y ? a.y : b.y,
@@ -368,5 +373,5 @@ void Transform::SetScale(const Vector3f& scale) {
 void Transform::RecomputeMatrix() {
     world = Math::mat_transform(position, quat, scale);
 
-    transInvWorld = Math::transpose(Math::inverse(world))
+    transInvWorld = Math::transpose(Math::inverse(world));
 }

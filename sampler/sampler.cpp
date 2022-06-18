@@ -2,7 +2,7 @@
 
 
 Sampler::Sampler(rtti::Struct* target,uint32 samplePerPixel):
-	pStruct(target),samplePerPixel(samplePerPixel),currentSampleIndex(-1){
+	pStruct(target),samplePerPixel(samplePerPixel),currentSampleIndex(0){
 	al_for(i,0,target->GetVariableInfo().size()) {
 		const rtti::VariableInfo* info = &target->GetVariableInfo()[i];
 		al_assert(rtti::VariableIsFloatType(info), 
@@ -15,12 +15,12 @@ Sampler::~Sampler() {
 	al_delete(pStruct);
 }
 
-float* Sampler::GetSample(const char* name) {
+const float* Sampler::GetSample(const char* name) {
 	uint32 index = GetSampleIndex(name);
 	return GetSample(index);
 }
 
-float* Sampler::GetSample(uint32 index) {
+const float* Sampler::GetSample(uint32 index) {
 	if (index >= pStruct->GetVariableInfo().size())
 		return nullptr;
 	const rtti::VariableInfo* info = &pStruct->GetVariableInfo()[index];
@@ -39,16 +39,17 @@ uint32  Sampler::GetSampleIndex(const char* name) {
 
 bool Sampler::NextSample() {
 	currentSampleIndex++;
-	if (currentSampleIndex >= samplePerPixel - 1)
+	if (currentSampleIndex > samplePerPixel)
 		return false;
 
 	al_for(i,0,pStruct->GetSize()) {
-		sampledData[i] = SampleDimension(currentSampleIndex, i);
+		sampledData[i] = SampleDimension(i);
 	}
 
 	return true;
 }
 
-void Sampler::NextPixel() {
+void Sampler::NextPixel(uint32 x,uint32 y) {
 	currentSampleIndex = 0;
+	pixelX = x, pixelY = y;
 }
