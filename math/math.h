@@ -4,8 +4,17 @@
 
 #define al_fequal(f1,f2) abs(f1 - f2) < 1e5
 
-#define infinity std::numeric_limits<float>::max()
+#define infinity std::numeric_limits<float>::max() * 0.5f
 #define infinity_i std::numeric_limits<uint32>::max()
+
+namespace Math {
+    inline bool isNan(float f)
+    {
+        union { float f; int i; } u;
+        u.f = f;
+        return (u.i & 0x7fffffff) > 0x7f800000;
+    }
+}
 
 struct Vector2f {
     union {
@@ -99,6 +108,9 @@ struct Ray {
     Ray():d(1,0,0),invd(1,infinity,infinity) {}
     Ray(const Vector3f& o, const Vector3f& d) :o(o),d(d){
         invd.x = 1.f / d.x, invd.y = 1.f / d.y, invd.z = 1.f / d.z;
+        if (Math::isNan(invd.x)) invd.x = infinity;
+        if (Math::isNan(invd.y)) invd.y = infinity;
+        if (Math::isNan(invd.z)) invd.z = infinity;
     }
     const Ray& operator=(const Ray& r) {
         o = r.o, d = r.d,invd = r.invd;

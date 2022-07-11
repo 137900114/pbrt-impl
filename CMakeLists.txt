@@ -19,6 +19,7 @@ add_subdirectory(math)
 add_subdirectory(common)
 add_subdirectory(scene)
 add_subdirectory(sampler)
+add_subdirectory(light)
 
 #copy the dll file
 add_custom_command(TARGET Alex POST_BUILD

@@ -1,18 +1,19 @@
 #pragma once
 #include "common/common.h"
 #include "common/rtti.h"
-
+#include <optional>
 
 class Sampler {
 public:
-	Sampler(rtti::Struct* pStruct,uint32 samplePerPixel);
+	Sampler(rtti::Struct* pStruct,uint32 extraSample,uint32 samplePerPixel);
 
 	~Sampler();
 
 	const float*	GetSample(const char* name);
 	const float*	GetSample(uint32 index);
+	std::optional<float>   ExtraSample(uint32 index);
 
-	uint32  GetSampleIndex(const char* name);
+	std::optional<uint32>  GetSampleIndex(const char* name);
 	
 	virtual bool	NextSample();
 	virtual void	NextPixel(uint32 x,uint32 y);
@@ -21,6 +22,7 @@ protected:
 
 	uint32 pixelX, pixelY;
 	uint32 samplePerPixel;
+	uint32 extraSample;
 	int32  currentSampleIndex;
 	rtti::Struct* pStruct;
 	vector<float> sampledData;

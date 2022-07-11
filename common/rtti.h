@@ -103,4 +103,6 @@ namespace rtti {
 #define RTTI_STRUCT(S) struct S : public rtti::Struct{\
 	S():rtti::Struct(#S){}
 
-#define RTTI_STRUCT_END()};
+#define RTTI_STRUCT_END };
+
+#define RTTI_VARIABLE(T,V) rtti::Variable<T> V = #V
