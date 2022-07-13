@@ -20,40 +20,44 @@ struct IntersectSurfaceInfo {
 
 class SceneObject {
 public:
-	SceneObject(ptr<Model>& model, const Transform& transform);
+	al_add_ptr_t(SceneObject);
+	SceneObject(Model::Ptr& model, const Transform& transform);
 
 	Transform& GetTransform() { return transform; }
-	ptr<Model> GetModel() { return model; }
+	Model::Ptr GetModel() { return model; }
 
 private:
 	Transform transform;
-	ptr<Model> model;
+	Model::Ptr model;
 };
 
 class Scene {
 public:
-	Scene() {}
+	al_add_ptr_t(Scene);
+	Scene():sceneBuildFlag(false) {}
 
 	//after editing scene will be built
 	void Build();
 
 	uint32 GetModelCount() { return models.size(); }
-	ptr<Model>   GetModel(ModelID i);
-	ptr<SceneObject> GetSceneObject(SceneObjectID i);
+	Model::Ptr   GetModel(ModelID i);
+	SceneObject::Ptr GetSceneObject(SceneObjectID i);
 
 	ModelID LoadModel(const String& path);
-	SceneObjectID CreateSceneObject(ptr<Model> model,const Transform& transform);
+	SceneObjectID CreateSceneObject(Model::Ptr model,const Transform& transform);
 
 	IntersectSurfaceInfo Intersect(const Ray& r);
 
-	ptr<Texture>  GetTexture(uint32 texId);
+	Texture::Ptr  GetTexture(uint32 texId);
 private:
+	bool sceneBuildFlag : 1;
+
 	vector<String>			 modelPaths;
-	vector<ptr<Model>>		 models;
-	vector<ptr<SceneObject>> sceneObjects;
+	vector<Model::Ptr>		 models;
+	vector<SceneObject::Ptr> sceneObjects;
 	
 	//cleared after every build
-	vector<ptr<Texture>>     texturePool;
+	vector<Texture::Ptr>     texturePool;
 	vector<Material>         materialPool;
 	vector<Vertex>			 vertexPool;
 	vector<uint32>			 indexPool;

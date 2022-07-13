@@ -16,8 +16,11 @@ enum TEXTURE_DATA_TYPE {
 //dimension should be 3 or 4
 class Texture{
 public:
-	static ptr<Texture> Load(const String& path);
-	static ptr<Texture> Create(uint32 width,uint32 height,uint32 dim, TEXTURE_DATA_TYPE type);
+	using Ptr = std::shared_ptr<Texture>;
+
+
+	static Ptr Load(const String& path);
+	static Ptr Create(uint32 width,uint32 height,uint32 dim, TEXTURE_DATA_TYPE type);
 	
 	uint32 GetWidth() const { return width; }
 	uint32 GetHeight() const { return height; }
@@ -25,22 +28,25 @@ public:
 
 	Vector4f Sample(const Vector2f& uv, TEXTURE_SAMPLER sampler);
 	virtual void Write(uint32 x, uint32 y,const Vector4f& value) = 0;
+	virtual Vector4f At(uint32 x, uint32 y) = 0;
 
 	virtual ~Texture();
 protected:
 	Texture(uint32 width,
 		uint32 height,uint32 dim);
 
-	virtual Vector4f At(uint32 x, uint32 y) = 0;
 	uint32 width, height,dim;
 
 };
 
 class BitTexture : public Texture {
-	friend ptr<Texture> Texture::Load(const String& path);
-	friend ptr<Texture> Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DATA_TYPE type);
+	friend Ptr Texture::Load(const String& path);
+	friend Ptr Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DATA_TYPE type);
 public:
 	virtual void Write(uint32 x, uint32 y, const Vector4f& value) override;
+
+	bool Save(const String& path);
+
 	~BitTexture();
 protected:
 	BitTexture(uint8* data, uint32 width,
@@ -52,8 +58,8 @@ protected:
 
 
 class FloatTexture : public Texture {
-	friend ptr<Texture> Texture::Load(const String& path);
-	friend ptr<Texture> Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DATA_TYPE type);
+	friend Ptr Texture::Load(const String& path);
+	friend Ptr Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DATA_TYPE type);
 public:
 	virtual void Write(uint32 x, uint32 y, const Vector4f& value) override;
 	~FloatTexture();

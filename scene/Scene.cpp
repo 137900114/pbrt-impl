@@ -36,7 +36,7 @@ void Scene::Build() {
 
 	//TODO currently we assume the scene objects have different model and textures
 	al_for(i,0,sceneObjects.size()) {
-		ptr<Model> model = sceneObjects[i]->GetModel();
+		Model::Ptr model = sceneObjects[i]->GetModel();
 		const Mat4x4& world = sceneObjects[i]->GetTransform().GetMatrix();
 		const Mat4x4& transInvWorld = sceneObjects[i]->GetTransform().GetTransInvMatrix();
 
@@ -54,7 +54,7 @@ void Scene::Build() {
 			}
 		}
 		al_for(j,0,model->MeshCount()) {
-			ptr<Mesh> mesh = model->GetMesh(j);
+			Mesh::Ptr mesh = model->GetMesh(j);
 			uint32 vertexOffset = vertexPool.size(),indiceOffset = indexPool.size();
 			const vector<Vertex>& vertices = mesh->GetVertices();
 			vertexPool.insert(vertexPool.end(), vertices.begin(), vertices.end());
@@ -96,22 +96,22 @@ void Scene::Build() {
 	tree.Build(primitives, intersector);
 }
 
-ptr<Model>   Scene::GetModel(ModelID i) {
+Model::Ptr   Scene::GetModel(ModelID i) {
 	al_assert(i < models.size() && i >= 0, "Scene::GetModel index {0} is out of bondary {1}",i,models.size());
 	return models[i];
 }
 
-ptr<SceneObject> Scene::GetSceneObject(SceneObjectID i) {
+SceneObject::Ptr Scene::GetSceneObject(SceneObjectID i) {
 	al_assert(i < sceneObjects.size() && i >= 0, "Scene::GetSceneObject index {0} is out of bondary {1}", i, models.size());
 	return sceneObjects[i];
 }
 
 ModelID Scene::LoadModel(const String& path) {
 	if (auto iter = std::find(modelPaths.begin(), modelPaths.end(), path);iter != modelPaths.end()) {
-		al_log("model {0} is found at {1}", WideString2String(path), iter - modelPaths.begin());
+		al_log("model {0} is found at {1}", ConvertToNarrowString(path), iter - modelPaths.begin());
 		return iter - modelPaths.begin();
 	}
-	ptr<Model> model = Model::Load(path);
+	Model::Ptr model = Model::Load(path);
 	modelPaths.push_back(path);
 	if (model != nullptr) {
 		models.push_back(model);
@@ -120,19 +120,21 @@ ModelID Scene::LoadModel(const String& path) {
 	return -1;
 }
 
-SceneObjectID Scene::CreateSceneObject(ptr<Model> model, const Transform& transform) {
-	ptr<SceneObject> sobj(al_new(SceneObject, model, transform));
+SceneObjectID Scene::CreateSceneObject(Model::Ptr model, const Transform& transform) {
+	SceneObject::Ptr sobj(al_new(SceneObject, model, transform));
 	sceneObjects.push_back(sobj);
+	//add a new object to the scene.set to build flag to false
+	sceneBuildFlag = false;
 	return (int32)sceneObjects.size() - 1;
 }
 
 
-ptr<Texture>  Scene::GetTexture(uint32 texId){
+Texture::Ptr  Scene::GetTexture(uint32 texId){
 	al_assert(texId < texturePool.size(), "Scene::GetTexture texture is out of bondary");
 	return texturePool[texId];
 }
 
-SceneObject::SceneObject(ptr<Model>& model, const Transform& transform):model(model),
+SceneObject::SceneObject(Model::Ptr& model, const Transform& transform):model(model),
 	transform(transform){
 	al_assert(model != nullptr, "SceneObject::SceneObject : model of a scene object should not be nullptr");
 }
@@ -153,7 +155,7 @@ IntersectSurfaceInfo Scene::Intersect(const Ray& r) {
 		
 	info.material = &materialPool[primitiveMaterialIndex[bvhInfo.primitiveIndex]];
 	if (info.material->textureIndex[TEXTURE_TYPE_NORMALS] >= 0) {
-		ptr<Texture> normalMap = GetTexture(info.material->textureIndex[TEXTURE_TYPE_NORMALS]);
+		Texture::Ptr normalMap = GetTexture(info.material->textureIndex[TEXTURE_TYPE_NORMALS]);
 		
 		Vector4f localNormalSample = normalMap->Sample(bvhInfo.intersection.uv, TEXTURE_SAMPLER_LINEAR);
 		

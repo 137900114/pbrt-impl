@@ -11,6 +11,8 @@ using namespace std;
 #include <string.h>
 #include <stdint.h>
 
+#define AL_USE_WIDE_STRING
+
 using uint64 = uint64_t;
 using uint32 = uint32_t;
 using uint16 = uint16_t;
@@ -44,14 +46,10 @@ using int8   = int8_t ;
 #define al_debug_break 
 #endif
 
-
-template<typename T>
-using ptr = shared_ptr<T>;
-
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
-inline ptr<spdlog::logger> _al_logger;
+inline shared_ptr<spdlog::logger> _al_logger;
 
 #define al_log_initialize() _al_logger = spdlog::stdout_color_mt("Alex");\
 							_al_logger->set_level(spdlog::level::trace);\
@@ -60,35 +58,24 @@ inline ptr<spdlog::logger> _al_logger;
 #define al_log_finalize()   _al_logger = nullptr;
 
 #define al_log(...) _al_logger->info(__VA_ARGS__)
+#define al_warn(...) _al_logger->warn(__VA_ARGS__)
 #define al_assert(expr,...) if(!(expr)) {_al_logger->error(__VA_ARGS__);al_debug_break;exit(-1);}
 
-
+#ifdef AL_USE_WIDE_STRING
 using String = wstring;
-#define al_string(s) L##s
+#define AL_STR(s) L##s
+#else
+using String = std::string;
+#define AL_STR(s) s
+#endif
 
+String ConvertFromNarrowString(const std::string& str);
 
-inline String ConvertToString(const std::wstring& s) {
-	return s;
-}
+String ConvertFromWideString(const std::wstring str);
 
-inline String ConvertToString(const std::string& s) {
-	const char* chSrc = s.c_str();
-	size_t nDestSize = mbstowcs(NULL, chSrc, 0) + 1;
-	wchar_t* wchDest = new wchar_t[nDestSize];
-	wmemset(wchDest, 0, nDestSize);
-	mbstowcs(wchDest, chSrc, nDestSize);
-	std::wstring wstrResult = wchDest;
-	delete[]wchDest;
-	return wstrResult;
-}
+std::string ConvertToNarrowString(const String& str);
 
-
-inline std::string WideString2String(const std::wstring& wstr)
-{
-	using convert_typeX = std::codecvt_utf8<wchar_t>;
-	std::wstring_convert<convert_typeX, wchar_t> converterX;
-	return converterX.to_bytes(wstr);
-}
+std::wstring ConvertToWideString(const String& str);
 
 //an output parameter
 #define param_out 
@@ -117,3 +104,5 @@ inline std::string WideString2String(const std::wstring& wstr)
 #define al_profile_start_capture()			OPTICK_START_CAPTURE()
 #define al_profile_stop_capture()			OPTICK_STOP_CAPTURE()
 #define al_profile_save_capture(file)       OPTICK_SAVE_CAPTURE(file)
+
+#define al_add_ptr_t(Type) using Ptr = std::shared_ptr<Type>

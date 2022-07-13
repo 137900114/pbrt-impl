@@ -63,9 +63,11 @@ namespace rtti {
 		const char* name;
 		const char* typeName;
 		uint64 size;
+		uint64 count;
 		uint64 offset;
 
 		void* Get(void* ptr) const;
+		void* Get(void* ptr, uint64 index) const;
 	};
 
 	bool VariableIsFloatType(const VariableInfo* info);
@@ -89,14 +91,16 @@ namespace rtti {
 	};
 
 	//this function should not be called externally
-	void InitializeStructVariable(const char* name,const char* type,uint64 size);
+	void InitializeStructVariable(const char* name,const char* type,uint64 size,uint64 count);
 
-	template<typename T>
+	template<typename T,uint64 count>
 	struct Variable {
 		Variable(const char* name) {
-			InitializeStructVariable(name, TypeTrait<T>::name, TypeTrait<T>::size);
+			static_assert(count != 0, "count of a array should not be 0");
+			InitializeStructVariable(name, TypeTrait<T>::name, TypeTrait<T>::size, count);
 		}
-	};	
+	};
+
 }
 
 
@@ -105,4 +109,10 @@ namespace rtti {
 
 #define RTTI_STRUCT_END };
 
-#define RTTI_VARIABLE(T,V) rtti::Variable<T> V = #V
+#define RTTI_VARIABLE(T,V) rtti::Variable<T,1> V = #V
+#define RTTI_ARRAY(T,C,V) rtti::Variable<T,C> V = #V
+
+//a empty struct
+RTTI_STRUCT(SEmpty)
+
+RTTI_STRUCT_END

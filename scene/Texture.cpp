@@ -1,5 +1,6 @@
 #include "Texture.h"
 #include "stb/stb_image.h"
+#include "stb/stb_image_write.h"
 
 Texture::~Texture() {}
 
@@ -12,13 +13,13 @@ Texture::Texture( uint32 width,uint32 height, uint32 dim):
 namespace fs = std::filesystem;
 
 static bool SupportedBySTBBitData(const fs::path& _ext) {
-	std::wstring extName = _ext.extension().wstring();
-	return extName == L".png" || extName == L".bmp" || extName == L".jpg" || extName == L".tga";
+	std::string extName = _ext.extension().string();
+	return extName == ".png" || extName == ".bmp" || extName == ".jpg" || extName == ".tga";
 }
 
 static bool SupportedBySTBFloatData(const fs::path& _ext) {
-	std::wstring extName = _ext.extension().wstring();
-	return extName == L".hdr";
+	std::string extName = _ext.extension().string();
+	return extName == ".hdr";
 }
 
 static std::tuple<void*, int,int,int> LoadRawDataBySTB(const wchar_t* filepath, bool filp_vertically) {
@@ -27,7 +28,7 @@ static std::tuple<void*, int,int,int> LoadRawDataBySTB(const wchar_t* filepath, 
 	stbi_set_flip_vertically_on_load(filp_vertically);
 	FILE* target_file = nullptr;
 	if (errno_t error = _wfopen_s(&target_file, filepath, L"rb"); error != 0) {
-		al_log("Texture::Load : fail to open file {0} error {1}", WideString2String(filepath),error);
+		al_log("Texture::Load : fail to open file {0} error {1}", ConvertToNarrowString(filepath),error);
 		return std::move(std::make_tuple(nullptr, -1, -1,-1));
 	}
 	data = stbi_load_from_file(target_file, &width, &height, &comp, 0);
@@ -35,32 +36,32 @@ static std::tuple<void*, int,int,int> LoadRawDataBySTB(const wchar_t* filepath, 
 	return std::move(std::make_tuple(data, width, height,comp));
 }
 
-ptr<Texture> Texture::Load(const String& path) {
+Texture::Ptr Texture::Load(const String& path) {
 	fs::path p = path;
 	if (!fs::exists(p)) {
-		al_log("Texture::Load : file path {0} doesn't exists",WideString2String(path));
+		al_log("Texture::Load : file path {0} doesn't exists",ConvertToNarrowString(path));
 		return nullptr;
 	}
 	if (SupportedBySTBBitData(p)) {
 		auto [data, width, height, comp] = LoadRawDataBySTB(path.c_str(), false);
 		if (!data) return nullptr;
-		ptr<Texture> texture(new BitTexture((uint8*)data, (uint32)width, (uint32)height, (uint32)comp));
+		Texture::Ptr texture(new BitTexture((uint8*)data, (uint32)width, (uint32)height, (uint32)comp));
 		return texture;
 	}
 	if (SupportedBySTBFloatData(p)) {
 		auto [data, width, height, comp] = LoadRawDataBySTB(path.c_str(), false);
 		if (!data) return nullptr;
-		ptr<Texture> texture(new FloatTexture((float*)data, (uint32)width, (uint32)height, (uint32)comp));
+		Texture::Ptr texture(new FloatTexture((float*)data, (uint32)width, (uint32)height, (uint32)comp));
 		return texture;
 	}
 
-	al_log("Texture::Load : file {0} 's extension {1} is not supported", WideString2String(path), p.extension().string());
+	al_log("Texture::Load : file {0} 's extension {1} is not supported", ConvertToNarrowString(path), p.extension().string());
 	return nullptr;
 }
 
 
 
-ptr<Texture> Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DATA_TYPE type){
+Texture::Ptr Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DATA_TYPE type){
 	switch (type) {
 	case TEXTURE_DATA_TYPE_8BIT:
 		{
@@ -68,7 +69,7 @@ ptr<Texture> Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DA
 			void* data = al_malloc(size); 
 			al_assert(data != nullptr, "out of memory");
 			zero_memory_s(data, size);
-			ptr<Texture> texture(new BitTexture((uint8*)data, width, height, dim));
+			Texture::Ptr texture(new BitTexture((uint8*)data, width, height, dim));
 			return texture;
 		}
 	case TEXTURE_DATA_TYPE_FLOAT:
@@ -77,7 +78,7 @@ ptr<Texture> Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DA
 			void* data = al_malloc(size);
 			al_assert(data != nullptr, "out of memory");
 			zero_memory_s(data, size);
-			ptr<Texture> texture(new FloatTexture((float*)data, width, height, dim));
+			Texture::Ptr texture(new FloatTexture((float*)data, width, height, dim));
 			return texture;
 		}
 	}
@@ -191,4 +192,49 @@ FloatTexture::~FloatTexture() {
 
 BitTexture::~BitTexture() {
 	al_mfree(textureData);
+}
+
+struct TextureWriteFuncContext {
+	FILE* pFile;
+};
+
+static void TextureWriteFunc(void* context,void* data,int size) {
+	FILE* pFile = ((TextureWriteFuncContext*)context)->pFile;
+	fwrite(data, size, 1, pFile);
+}
+
+bool BitTexture::Save(const String& _path) {
+	FILE* targetFile = nullptr;
+	
+	//get extension
+	fs::path path(_path);
+	String extName = ConvertFromNarrowString(path.extension().string());
+
+	if (errno_t error = _wfopen_s(&targetFile, _path.c_str(), L"wb"); error != 0) {
+		al_log("Texture::Load : fail to open file {0} error {1}", ConvertToNarrowString(_path), error);
+		return false;
+	}
+	TextureWriteFuncContext ctx;
+	ctx.pFile = targetFile;
+
+	int rv = 0;
+	if (extName == AL_STR(".png")) {
+		rv = stbi_write_png_to_func(TextureWriteFunc, &ctx, width, height, dim, textureData, 0);
+	}
+	else if (extName == AL_STR(".jpg")) {
+		rv = stbi_write_jpg_to_func(TextureWriteFunc, &ctx, width, height, dim, textureData, 0);
+	}
+	else if (extName == AL_STR(".bmp")) {
+		//default quality
+		rv = stbi_write_bmp_to_func(TextureWriteFunc, &ctx, width, height, dim, textureData);
+	}else if(extName == AL_STR(".tga")){
+		rv = stbi_write_tga_to_func(TextureWriteFunc, &ctx, width, height, dim, textureData);
+	}
+	else {
+		rv = 0;
+		al_warn("fail to save texture {} invalid extension name {}",ConvertToNarrowString(_path),
+			ConvertToNarrowString(extName));
+	}
+
+	return rv != 0;
 }

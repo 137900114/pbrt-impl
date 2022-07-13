@@ -328,7 +328,7 @@ namespace Math {
         *t = - (dot(N,vsub(r.o , v0))) / NdotRayDirection;
 
         // check if the triangle is in behind the ray
-        if (t < 0) return false;  //the triangle is behind 
+        if (*t < 0) return false;  //the triangle is behind 
 
         // compute the intersection point using equation 1
         Vector3f P = vadd(vmul(r.d, *t),r.o);

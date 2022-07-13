@@ -7,7 +7,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-ptr<Mesh> Model::GetMesh(uint32 i) {
+Mesh::Ptr Model::GetMesh(uint32 i) {
 	al_assert(i < meshs.size(), "file-{0}:line-{1} index of mesh {2} is out of boundary (0~{3})",
 		__FILE__,__LINE__,i,meshs.size());
 	return meshs[i];
@@ -19,7 +19,7 @@ Material Model::GetMaterial(uint32 i) {
 	return materials[i];
 }
 
-ptr<Texture> Model::GetTexture(uint32 i) {
+Texture::Ptr Model::GetTexture(uint32 i) {
 	al_assert(i < textures.size(), "file-{0}:line-{1} index of texture {2} is out of boundary (0~{3})",
 		__FILE__, __LINE__, i, textures.size());
 	return textures[i];
@@ -32,7 +32,7 @@ uint32 Model::GetMeshMaterialIndex(uint32 i) {
 }
 
 
-static void processAiNode(vector<ptr<Mesh>>& meshs,vector<uint32> materialIndex, aiNode* node, const aiScene* scene) {
+static void processAiNode(vector<Mesh::Ptr>& meshs,vector<uint32> materialIndex, aiNode* node, const aiScene* scene) {
 	for (size_t i = 0; i != node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 
@@ -70,7 +70,7 @@ static void processAiNode(vector<ptr<Mesh>>& meshs,vector<uint32> materialIndex,
 			}
 		}
 
-		meshs.push_back(ptr<Mesh>(al_new(Mesh,vertices,indices)));
+		meshs.push_back(Mesh::Ptr(al_new(Mesh,vertices,indices)));
 		materialIndex.push_back(mesh->mMaterialIndex);
 	}
 	for (size_t i = 0; i != node->mNumChildren; i++) {
@@ -78,12 +78,12 @@ static void processAiNode(vector<ptr<Mesh>>& meshs,vector<uint32> materialIndex,
 	}
 }
 
-static ptr<Model> LoadByAssimp(const String& pathName) {
+static Model::Ptr LoadByAssimp(const String& pathName) {
 	Assimp::Importer imp;
 
 	FILE* f;
 	if (errno_t error = _wfopen_s(&f, pathName.c_str(), L"rb"); error != 0) {
-		al_log("Model::Load : fail to open file {0} , reason {1}", WideString2String(pathName), error);
+		al_log("Model::Load : fail to open file {0} , reason {1}", ConvertToNarrowString(pathName), error);
 		return nullptr;
 	}
 	fseek(f, 0, SEEK_END);
@@ -104,20 +104,20 @@ static ptr<Model> LoadByAssimp(const String& pathName) {
 
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr) {
-		al_log("Model::Load : fail to load model file {0} reason {1}",WideString2String(pathName), 
+		al_log("Model::Load : fail to load model file {0} reason {1}",ConvertToNarrowString(pathName), 
 			string(imp.GetErrorString())
 		);
 		return nullptr;
 	}
 
-	vector<ptr<Mesh>> 	 meshs;
+	vector<Mesh::Ptr> 	 meshs;
 	vector<uint32>		 meshMaterialIndices;
 	vector<Material>  	 materials;
-	vector<ptr<Texture>> textures;
+	vector<Texture::Ptr> textures;
 
 	unordered_map<String, uint32>  texturePathMap;
 
-	String dirName = ConvertToString(fs::path(pathName).parent_path().wstring());
+	String dirName = ConvertFromWideString(fs::path(pathName).parent_path().wstring());
 	
 	for (size_t i = 0; i != scene->mNumMaterials; i++) {
 
@@ -128,7 +128,7 @@ static ptr<Model> LoadByAssimp(const String& pathName) {
 			if (mat->GetTextureCount(type) != 0) {
 				aiString str;
 				mat->GetTexture(type, 0, &str);
-				std::wstring texPath = ConvertToString(str.C_Str());
+				String texPath = ConvertFromNarrowString(str.C_Str());
 				//if the texture has been loaded
 				if (auto iter = texturePathMap.find(texPath);iter != texturePathMap.end()) {
 					return iter->second;
@@ -137,9 +137,9 @@ static ptr<Model> LoadByAssimp(const String& pathName) {
 				if (fs::path(texPath).is_relative()) {
 					texPath = dirName + texPath;
 				}
-				ptr<Texture> tex = Texture::Load(texPath);
+				Texture::Ptr tex = Texture::Load(texPath);
 				if (tex == nullptr) {
-					al_log("Model::Load : fail to load texture {0}",WideString2String(texPath));
+					al_log("Model::Load : fail to load texture {0}",ConvertToNarrowString(texPath));
 					return -1;
 				}
 				else {
@@ -180,7 +180,7 @@ static ptr<Model> LoadByAssimp(const String& pathName) {
 
 	processAiNode(meshs,meshMaterialIndices, scene->mRootNode, scene);
 
-	ptr<Model> model(al_new(Model, meshs, meshMaterialIndices,
+	Model::Ptr model(al_new(Model, meshs, meshMaterialIndices,
 		materials, textures));
 
 	return model;
@@ -204,16 +204,16 @@ static bool supportedByAssimp(const wchar_t* extName) {
 }
 
 
-ptr<Model> Model::Load(const String& path) {
+Model::Ptr Model::Load(const String& path) {
 
 	fs::path p = path;
-	String extName = ConvertToString(p.extension().wstring());
+	String extName = ConvertFromWideString(p.extension().wstring());
 	
 	if (supportedByAssimp(extName.c_str())) {
 		return LoadByAssimp(path);
 	}
 	else {
-		al_log("Model::Load : file {0} 's extension is not supported", WideString2String(path));
+		al_log("Model::Load : file {0} 's extension is not supported", ConvertToNarrowString(path));
 	}
 	return nullptr;
 }
@@ -223,9 +223,9 @@ Mesh::Mesh(const vector<Vertex>& vertices,
 
 }
 
-Model::Model(const vector<ptr<Mesh>>& meshs,
+Model::Model(const vector<Mesh::Ptr>& meshs,
 	const vector<uint32>& meshMaterialIndices,
 	const vector<Material>& materials,
-	const vector<ptr<Texture>>& textures):
+	const vector<Texture::Ptr>& textures):
 	meshs(meshs),meshMaterialIndices(meshMaterialIndices),
 	materials(materials),textures(textures){ }

@@ -120,6 +120,8 @@ struct Material{
 class Mesh {
 	friend class Model;
 public:
+	al_add_ptr_t(Mesh);
+
 	Mesh(const vector<Vertex>& vertices,
 		const  vector<uint32>& indices);
 
@@ -132,27 +134,29 @@ private:
 
 class Model {
 public:
-	Model(const vector<ptr<Mesh>>& meshs,
+	al_add_ptr_t(Model);
+
+	Model(const vector<Mesh::Ptr>& meshs,
 		const vector<uint32>& meshMaterialIndices,
 		const vector<Material>& materials,
-		const vector<ptr<Texture>>& textures);
+		const vector<Texture::Ptr>& textures);
 
-	static ptr<Model> Load(const String& path);
+	static Ptr Load(const String& path);
 
 	uint32 MeshCount() { return meshs.size(); }
-	ptr<Mesh> GetMesh(uint32 i);
+	Mesh::Ptr GetMesh(uint32 i);
 	uint32 GetMeshMaterialIndex(uint32 i);
 
 	uint32 MaterialCount() { return materials.size(); }
 	Material GetMaterial(uint32 i);
 
 	uint32 TextureCount() { return textures.size(); }
-	ptr<Texture> GetTexture(uint32 i);
+	Texture::Ptr GetTexture(uint32 i);
 
 private:
 
-	vector<ptr<Mesh>> 	 meshs;
+	vector<Mesh::Ptr> 	 meshs;
 	vector<uint32>		 meshMaterialIndices;
 	vector<Material>  	 materials;
-	vector<ptr<Texture>> textures;
+	vector<Texture::Ptr> textures;
 };

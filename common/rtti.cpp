@@ -5,17 +5,18 @@ namespace rtti {
 	static vector<VariableInfo>* structInfo;
 	static uint64* structSize;
 
-	void InitializeStructVariable(const char* name, const char* type, uint64 size) {
+	void InitializeStructVariable(const char* name, const char* type, uint64 size,uint64 count) {
 		al_assert(structSize != nullptr && structInfo != nullptr, "rtti::InitializeStructVariable"
 			": a rtti::Variable must be a member of rtti::Struct");
 		VariableInfo info{};
 		info.name = name;
 		info.typeName = type;
 		info.size = size;
+		info.count = count;
 		info.offset = *structSize;
 		
 		structInfo->push_back(info);
-		*structSize += size;
+		*structSize += size * count;
 	}
 
 
@@ -42,6 +43,13 @@ namespace rtti {
 	void* VariableInfo::Get(void* ptr) const {
 		al_assert(ptr != nullptr, "VariableInfo::Get : null pointer");
 		float* res = ((float*)ptr) + offset;
+		return res;
+	}
+
+	void* VariableInfo::Get(void* ptr, uint64 index) const {
+		al_assert(ptr != nullptr, "VariableInfo::Get : null pointer");
+		al_assert(index >= count, "VariableInfo::Get : index {} out of bondary {}", index, count);
+		float* res = ((float*)ptr) + (offset + size * index);
 		return res;
 	}
 
