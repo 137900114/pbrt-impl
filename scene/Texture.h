@@ -12,6 +12,8 @@ enum TEXTURE_DATA_TYPE {
 	TEXTURE_DATA_TYPE_FLOAT
 };
 
+class BitTexture;
+class FloatTextture;
 
 //dimension should be 3 or 4
 class Texture{
@@ -21,6 +23,7 @@ public:
 
 	static Ptr Load(const String& path);
 	static Ptr Create(uint32 width,uint32 height,uint32 dim, TEXTURE_DATA_TYPE type);
+
 	
 	uint32 GetWidth() const { return width; }
 	uint32 GetHeight() const { return height; }
@@ -43,6 +46,7 @@ class BitTexture : public Texture {
 	friend Ptr Texture::Load(const String& path);
 	friend Ptr Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DATA_TYPE type);
 public:
+	al_add_ptr_t(BitTexture);
 	virtual void Write(uint32 x, uint32 y, const Vector4f& value) override;
 
 	bool Save(const String& path);
@@ -61,6 +65,7 @@ class FloatTexture : public Texture {
 	friend Ptr Texture::Load(const String& path);
 	friend Ptr Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DATA_TYPE type);
 public:
+	al_add_ptr_t(FloatTexture);
 	virtual void Write(uint32 x, uint32 y, const Vector4f& value) override;
 	~FloatTexture();
 protected:

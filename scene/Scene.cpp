@@ -33,6 +33,7 @@ Intersection SceneIntersector::Intersect(const Ray& r, uint32 primitiveIndex) {
 
 void Scene::Build() {
 	al_profile_event();
+	if (sceneBuildFlag) return;
 
 	//TODO currently we assume the scene objects have different model and textures
 	al_for(i,0,sceneObjects.size()) {
@@ -93,6 +94,7 @@ void Scene::Build() {
 	}
 	SceneIntersector* intersector = al_new(SceneIntersector,&indexPool,&vertexPool);
 
+	sceneBuildFlag = true;
 	tree.Build(primitives, intersector);
 }
 
@@ -101,12 +103,16 @@ Model::Ptr   Scene::GetModel(ModelID i) {
 	return models[i];
 }
 
+//user may adjust scene through scene object so set build flag to false
 SceneObject::Ptr Scene::GetSceneObject(SceneObjectID i) {
 	al_assert(i < sceneObjects.size() && i >= 0, "Scene::GetSceneObject index {0} is out of bondary {1}", i, models.size());
+
+	sceneBuildFlag = false;
 	return sceneObjects[i];
 }
 
 ModelID Scene::LoadModel(const String& path) {
+	sceneBuildFlag = false;
 	if (auto iter = std::find(modelPaths.begin(), modelPaths.end(), path);iter != modelPaths.end()) {
 		al_log("model {0} is found at {1}", ConvertToNarrowString(path), iter - modelPaths.begin());
 		return iter - modelPaths.begin();
@@ -121,6 +127,7 @@ ModelID Scene::LoadModel(const String& path) {
 }
 
 SceneObjectID Scene::CreateSceneObject(Model::Ptr model, const Transform& transform) {
+	sceneBuildFlag = false;
 	SceneObject::Ptr sobj(al_new(SceneObject, model, transform));
 	sceneObjects.push_back(sobj);
 	//add a new object to the scene.set to build flag to false
@@ -141,6 +148,8 @@ SceneObject::SceneObject(Model::Ptr& model, const Transform& transform):model(mo
 
 
 IntersectSurfaceInfo Scene::Intersect(const Ray& r) {
+	al_assert(sceneBuildFlag, "Scene::Intersect : scene must be built before any intersection test");
+
 	BVHIntersectInfo bvhInfo = tree.Intersect(r);
 	
 	IntersectSurfaceInfo info;

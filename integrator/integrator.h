@@ -7,7 +7,7 @@ class Integrator {
 public:
 	al_add_ptr_t(Integrator);
 	//by default the spp is 16
-	Integrator(const String& name):name(name), rtWidth(0),rtHeight(0) {}
+	Integrator(): rtWidth(0),rtHeight(0) {}
 	void AttachOutput(Texture::Ptr rt) {
 		renderTarget = rt;
 		if (rt != nullptr) {
@@ -19,7 +19,6 @@ public:
 	virtual void Render(Scene::Ptr scene) = 0;
 	virtual void LogStatus() = 0;
 protected:
-	String name;
 	Texture::Ptr renderTarget;
 	uint32 rtWidth, rtHeight;
 };
@@ -28,8 +27,8 @@ protected:
 class PathIntegrator : public Integrator {
 public:
 	al_add_ptr_t(PathIntegrator);
-	PathIntegrator(const String& name) :
-		Integrator(name),samplePerPixel(16),
+	PathIntegrator() :
+		samplePerPixel(16),
 		nThread(1),maxDepth(5) {}
 
 	PathIntegrator& SetSamplePerPixel(uint32 spp);

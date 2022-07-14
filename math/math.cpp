@@ -146,7 +146,7 @@ namespace Math {
         return mat;
     }
 
-    Mat4x4 projection(float aspectRatio, float fov, float near, float far) {
+    Mat4x4 perspective(float aspectRatio, float fov, float near, float far) {
         float ta = tanf(fov * .5f);
         return Mat4x4(
             1.f / (aspectRatio * ta), 0.0f      , 0.0f                      , 0.0f,

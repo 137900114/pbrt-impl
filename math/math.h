@@ -14,6 +14,8 @@ namespace Math {
         u.f = f;
         return (u.i & 0x7fffffff) > 0x7f800000;
     }
+
+    inline constexpr float pi = 3.1415926;
 }
 
 struct Vector2f {
@@ -108,12 +110,17 @@ struct Ray {
     Ray():d(1,0,0),invd(1,infinity,infinity) {}
     Ray(const Vector3f& o, const Vector3f& d) :o(o),d(d){
         invd.x = 1.f / d.x, invd.y = 1.f / d.y, invd.z = 1.f / d.z;
-        if (Math::isNan(invd.x)) invd.x = infinity;
-        if (Math::isNan(invd.y)) invd.y = infinity;
-        if (Math::isNan(invd.z)) invd.z = infinity;
     }
     const Ray& operator=(const Ray& r) {
         o = r.o, d = r.d,invd = r.invd;
+        return *this;
+    }
+    void SetDirection(const Vector3f& d) {
+        this->d = d;
+        invd.x = 1.f / d.x, invd.y = 1.f / d.y, invd.z = 1.f / d.z;
+    }
+    void SetPosition(const Vector3f& o) {
+        this->o = o;
     }
 };
 
@@ -298,7 +305,7 @@ namespace Math {
 
     Mat4x4 inverse(const Mat4x4& m);
 
-    Mat4x4 projection(float aspectRatio,float fov,float near,float far);
+    Mat4x4 perspective(float aspectRatio,float fov,float near,float far);
 
     Mat4x4 mat_position(const Vector3f& pos);
 
