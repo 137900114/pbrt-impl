@@ -4,26 +4,32 @@
 
 struct LightSample{
 	Vector3f dir;
-	float    I;
+	Vector3f I;
 	Vector3f pos;
 };
 
 enum LIGHT_TYPE {
 	LIGHT_TYPE_POINT,
 	LIGHT_TYPE_DIRECTIONAL,
+	LIGHT_TYPE_AREA
 };
 
 class Light {
 public:
-	Light(LIGHT_TYPE type, float intensity);
+	al_add_ptr_t(Light);
+	Light(LIGHT_TYPE type,const Vector3f& intensity);
 
-	virtual LightSample Sample(const Ray& r) = 0;
+	bool IsDeltaType();
+	
+	Vector3f DeltaIntensity();
+	Vector3f SampleIntensity();
+
 
 	LIGHT_TYPE GetLightType() {}
 
 	virtual ~Light() {}
 protected:
-	float intensity;
+	Vector3f   intensity;
 	LIGHT_TYPE type;
 };
 

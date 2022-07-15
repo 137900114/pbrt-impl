@@ -3,7 +3,7 @@
 
 class DirectionalLight : public Light {
 public:
-	DirectionalLight(Vector3f dir, float intensity);
+	DirectionalLight(Vector3f dir,const Vector3f& intensity);
 
 	LightSample Sample(const Ray& r);
 

@@ -2,43 +2,55 @@
 #include "common/common.h"
 #include "scene/Texture.h"
 #include "scene/Scene.h"
+#include "camera/camera.h"
+#include "sampler/sampler.h"
 
 class Integrator {
 public:
 	al_add_ptr_t(Integrator);
 	//by default the spp is 16
 	Integrator(): rtWidth(0),rtHeight(0) {}
-	void AttachOutput(Texture::Ptr rt) {
-		renderTarget = rt;
-		if (rt != nullptr) {
-			rtWidth = rt->GetHeight();
-			rtHeight = rt->GetWidth();
-		}
-	}
+	void AttachCamera(Camera::Ptr camera);
+	void AttachScene(Scene::Ptr   scene);
 
-	virtual void Render(Scene::Ptr scene) = 0;
+	virtual void Render() = 0;
 	virtual void LogStatus() = 0;
+
+	virtual ~Integrator();
 protected:
-	Texture::Ptr renderTarget;
+	Camera::Ptr camera;
+	Scene::Ptr  scene;
 	uint32 rtWidth, rtHeight;
 };
 
+enum LIGHT_SAMPLE_STRATEGY {
+	LIGHT_SAMPLE_STRATEGY_ALL,
+	LIGHT_SAMPLE_STRATEGY_ONE
+};
 
-class PathIntegrator : public Integrator {
+class SampledIntegrator : public Integrator {
 public:
-	al_add_ptr_t(PathIntegrator);
-	PathIntegrator() :
+	al_add_ptr_t(SampledIntegrator);
+	SampledIntegrator() :
 		samplePerPixel(16),
-		nThread(1),maxDepth(5) {}
+		nThread(1),maxDepth(5),
+		lightSampleStrategy(LIGHT_SAMPLE_STRATEGY_ONE) 
+	{}
 
-	PathIntegrator& SetSamplePerPixel(uint32 spp);
-	PathIntegrator& SetThreadNumber(uint32 nThread);
-	PathIntegrator& SetMaxDepth(uint32 depth);
+	void SetSamplePerPixel(uint32 spp);
+	void SetThreadNumber(uint32 nThread);
+	void SetMaxDepth(uint32 depth);
+	void SetLightSampleStrategy(LIGHT_SAMPLE_STRATEGY strategy);
 
-	virtual void Render(Scene::Ptr scene) override;
-	virtual void LogStatus() override;
-private:
+	virtual void Render() override;
+protected:
+	virtual Vector3f Li(Ray r,Scene::Ptr scene,
+		Sampler::Ptr sampler) = 0;
+	virtual uint32   EstimateSampleCount(Scene::Ptr scene) = 0;
+
+
 	uint32 samplePerPixel;
 	uint32 nThread;
 	uint32 maxDepth;
+	LIGHT_SAMPLE_STRATEGY lightSampleStrategy;
 };

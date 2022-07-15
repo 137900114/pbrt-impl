@@ -1,6 +1,6 @@
 #include "DirectionalLight.h"
 
-DirectionalLight::DirectionalLight(Vector3f dir, float intensity):
+DirectionalLight::DirectionalLight(Vector3f dir,const Vector3f& intensity):
 	Light(LIGHT_TYPE_DIRECTIONAL,intensity),dir(dir){}
 
 LightSample DirectionalLight::Sample(const Ray& r) {

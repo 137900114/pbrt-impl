@@ -4,7 +4,7 @@
 
 #define al_fequal(f1,f2) abs(f1 - f2) < 1e5
 
-#define infinity std::numeric_limits<float>::max() * 0.5f
+#define infinity std::numeric_limits<float>::max()
 #define infinity_i std::numeric_limits<uint32>::max()
 
 namespace Math {
@@ -338,4 +338,40 @@ namespace Math {
     //intersect with triangle
     bool   ray_intersect(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3, const Ray& r,
         param_out float* t, param_out Vector2f* uv, param_out Vector3f* position);
+
+
+    bool contains_nan(const Vector2f& v);
+    bool contains_nan(const Vector3f& v);
+    bool contains_nan(const Vector4f& v);
+    
+    bool contains_inf(const Vector2f& v);
+    bool contains_inf(const Vector3f& v);
+    bool contains_inf(const Vector4f& v);
+};
+
+//format vector values
+#include "spdlog/formatter.h"
+
+template<> struct fmt::formatter<Vector2f> : fmt::formatter<std::string> {
+    template <typename FormatContext>
+    auto format(Vector2f v, FormatContext& ctx) {
+        string res = fmt::format("({},{})", v.x, v.y);
+        return formatter<string>::format(res, ctx);
+    }
+};
+
+template<> struct fmt::formatter<Vector3f> : fmt::formatter<std::string> {
+    template <typename FormatContext>
+    auto format(Vector3f v, FormatContext& ctx) {
+        string res = fmt::format("({},{},{})", v.x, v.y, v.z);
+        return formatter<string>::format(res, ctx);
+    }
+};
+
+template<> struct fmt::formatter<Vector4f> : fmt::formatter<std::string> {
+    template <typename FormatContext>
+    auto format(Vector4f v, FormatContext& ctx) {
+        string res = fmt::format("({},{},{},{})", v.x, v.y, v.z, v.w);
+        return formatter<string>::format(res, ctx);
+    }
 };

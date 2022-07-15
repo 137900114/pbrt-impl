@@ -3,9 +3,7 @@
 
 class PointLight : public Light {
 public:
-	PointLight(Vector3f position, float intensity);
-
-	virtual LightSample Sample(const Ray& r) override;
+	PointLight(Vector3f position,const Vector3f& intensity);
 
 private:
 	Vector3f position;

@@ -344,6 +344,28 @@ namespace Math {
 
         return true;  //this ray hits the triangle 
     }
+
+
+    bool contains_nan(const Vector2f& v) {
+        return (isNan(v.x) || isNan(v.y));
+    }
+
+    bool contains_nan(const Vector3f& v) {
+        return (isNan(v.x) || isNan(v.y) || isNan(v.z));
+    }
+    bool contains_nan(const Vector4f& v) {
+        return (isNan(v.x) || isNan(v.y) || isNan(v.z) || isNan(v.w));
+    }
+
+    bool contains_inf(const Vector2f& v) {
+        return std::isinf(v.x) || std::isinf(v.y);
+    }
+    bool contains_inf(const Vector3f& v) {
+        return std::isinf(v.x) || std::isinf(v.y) || std::isinf(v.z);
+    }
+    bool contains_inf(const Vector4f& v) {
+        return std::isinf(v.x) || std::isinf(v.y) || std::isinf(v.z) || std::isinf(v.w);
+    }
 };
 
 Quaternion::Quaternion(const Vector3f& axis, float angle) {
@@ -375,3 +397,4 @@ void Transform::RecomputeMatrix() {
 
     transInvWorld = Math::transpose(Math::inverse(world));
 }
+
