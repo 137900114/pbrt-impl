@@ -1,7 +1,7 @@
 #include "common/common.h"
 #include "sampler/halton.h"
 
-#include "scene/Texture.h"
+#include "scene/texture.h"
 
 #include <iostream>
 

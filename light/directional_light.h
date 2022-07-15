@@ -5,8 +5,8 @@ class DirectionalLight : public Light {
 public:
 	DirectionalLight(Vector3f dir,const Vector3f& intensity);
 
-	LightSample Sample(const Ray& r);
-
+	virtual Vector3f DeltaIntensity(const Intersection& isect, Vector3f* wi, 
+		VisiblityTester* tester) override;
 private:
 	Vector3f dir;
 };

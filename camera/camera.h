@@ -1,6 +1,6 @@
 #pragma once
 #include "common/common.h"
-#include "scene/Texture.h"
+#include "scene/texture.h"
 #include "common/rtti.h"
 
 RTTI_STRUCT(CameraSample)

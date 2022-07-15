@@ -1,7 +1,7 @@
 #pragma once
 #include "common/common.h"
-#include "scene/Texture.h"
-#include "scene/Scene.h"
+#include "scene/texture.h"
+#include "scene/scene.h"
 #include "camera/camera.h"
 #include "sampler/sampler.h"
 

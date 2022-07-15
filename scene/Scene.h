@@ -1,12 +1,15 @@
 #pragma once
 
 #include "math/math.h"
-#include "scene/Model.h"
-#include "scene/Texture.h"
+#include "scene/model.h"
+#include "scene/texture.h"
 #include "accelerator/bvh.h"
+#include "light/light.h"
+#include <optional>
 
-using ModelID = int32;
-using SceneObjectID = int32;
+using ModelID = uint32;
+using SceneObjectID = uint32;
+using LightID = uint32;
 
 
 struct IntersectSurfaceInfo {
@@ -39,19 +42,23 @@ public:
 	//after editing scene will be built
 	void Build();
 
-	uint32 GetModelCount() { return models.size(); }
-	Model::Ptr   GetModel(ModelID i);
-	SceneObject::Ptr GetSceneObject(SceneObjectID i);
+	uint32				GetModelCount() { return models.size(); }
+	Model::Ptr			GetModel(ModelID i);
+	SceneObject::Ptr	GetSceneObject(SceneObjectID i);
 
-	ModelID LoadModel(const String& path);
-	SceneObjectID CreateSceneObject(Model::Ptr model,const Transform& transform);
+	optional<ModelID>	LoadModel(const String& path);
+	SceneObjectID		CreateSceneObject(Model::Ptr model,const Transform& transform);
+	LightID				AddLightSource(Light::Ptr light);
 
-	IntersectSurfaceInfo Intersect(const Ray& r);
+	LightID				GetLightSourceCount() { return lightSources.size(); }
+	Light::Ptr			GetLightSource(LightID id);
 
-	Texture::Ptr  GetTexture(uint32 texId);
+	IntersectSurfaceInfo	Intersect(const Ray& r);
+	Texture::Ptr			GetTexture(uint32 texId);
 private:
 	bool sceneBuildFlag : 1;
 
+	vector<Light::Ptr>		 lightSources;
 	vector<String>			 modelPaths;
 	vector<Model::Ptr>		 models;
 	vector<SceneObject::Ptr> sceneObjects;
@@ -62,6 +69,7 @@ private:
 	vector<Vertex>			 vertexPool;
 	vector<uint32>			 indexPool;
 	vector<uint32>			 primitiveMaterialIndex;
+
 	//tree for acceleration
 	BVHTree tree;
 };

@@ -1,4 +1,4 @@
-#include "Scene.h"
+#include "scene.h"
 #include "math/math.h"
 
 Intersection SceneIntersector::Intersect(const Ray& r, uint32 primitiveIndex) {
@@ -111,7 +111,7 @@ SceneObject::Ptr Scene::GetSceneObject(SceneObjectID i) {
 	return sceneObjects[i];
 }
 
-ModelID Scene::LoadModel(const String& path) {
+optional<ModelID> Scene::LoadModel(const String& path) {
 	sceneBuildFlag = false;
 	if (auto iter = std::find(modelPaths.begin(), modelPaths.end(), path);iter != modelPaths.end()) {
 		al_log("model {0} is found at {1}", ConvertToNarrowString(path), iter - modelPaths.begin());
@@ -121,18 +121,17 @@ ModelID Scene::LoadModel(const String& path) {
 	modelPaths.push_back(path);
 	if (model != nullptr) {
 		models.push_back(model);
-		return (int32)(models.size() - 1);
+		return (uint32)(models.size() - 1);
 	}
-	return -1;
+	return {};
 }
 
 SceneObjectID Scene::CreateSceneObject(Model::Ptr model, const Transform& transform) {
-	sceneBuildFlag = false;
 	SceneObject::Ptr sobj(al_new(SceneObject, model, transform));
 	sceneObjects.push_back(sobj);
 	//add a new object to the scene.set to build flag to false
 	sceneBuildFlag = false;
-	return (int32)sceneObjects.size() - 1;
+	return (uint32)sceneObjects.size() - 1;
 }
 
 
@@ -146,6 +145,20 @@ SceneObject::SceneObject(Model::Ptr& model, const Transform& transform):model(mo
 	al_assert(model != nullptr, "SceneObject::SceneObject : model of a scene object should not be nullptr");
 }
 
+Light::Ptr Scene::GetLightSource(LightID id) {
+	al_assert(id >= lightSources.size(), "Scene::GetLightSource : light source id out of bondary");
+	return lightSources[id];
+}
+
+LightID Scene::AddLightSource(Light::Ptr light) {
+	al_for(i, 0, lightSources.size()) {
+		//don't add repeated light source
+		if (lightSources[i] == light) {
+			return i;
+		}
+	}
+	lightSources.push_back(light);
+}
 
 IntersectSurfaceInfo Scene::Intersect(const Ray& r) {
 	al_assert(sceneBuildFlag, "Scene::Intersect : scene must be built before any intersection test");

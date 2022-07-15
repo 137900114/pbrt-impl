@@ -1,10 +1,11 @@
-#include "Model.h"
+#include "model.h"
 
-#include "assimp/Importer.hpp"
+#include "assimp/importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
 #include <filesystem>
+#include "light/area_light.h"
 namespace fs = std::filesystem;
 
 Mesh::Ptr Model::GetMesh(uint32 i) {
@@ -181,7 +182,7 @@ static Model::Ptr LoadByAssimp(const String& pathName) {
 	processAiNode(meshs,meshMaterialIndices, scene->mRootNode, scene);
 
 	Model::Ptr model(al_new(Model, meshs, meshMaterialIndices,
-		materials, textures));
+		materials, textures, {}));
 
 	return model;
 }
@@ -226,6 +227,8 @@ Mesh::Mesh(const vector<Vertex>& vertices,
 Model::Model(const vector<Mesh::Ptr>& meshs,
 	const vector<uint32>& meshMaterialIndices,
 	const vector<Material>& materials,
-	const vector<Texture::Ptr>& textures):
+	const vector<Texture::Ptr>& textures,
+	const vector<AreaLight::Ptr>& lights):
+
 	meshs(meshs),meshMaterialIndices(meshMaterialIndices),
 	materials(materials),textures(textures){ }

@@ -109,8 +109,11 @@ enum TEXTURE_TYPE
 	TEXTURE_TYPE_NUM = TEXTURE_TYPE_UNKNOWN + 1
 };
 
+class AreaLight;
+
 struct Material{
 	int32 textureIndex[TEXTURE_TYPE_NUM];
+	int32 lightIndex;
 
 	Vector3f diffuseColor;
 	Vector3f specular;
@@ -139,7 +142,8 @@ public:
 	Model(const vector<Mesh::Ptr>& meshs,
 		const vector<uint32>& meshMaterialIndices,
 		const vector<Material>& materials,
-		const vector<Texture::Ptr>& textures);
+		const vector<Texture::Ptr>& textures,
+		const vector<shared_ptr<AreaLight>>& lights);
 
 	static Ptr Load(const String& path);
 
@@ -159,4 +163,5 @@ private:
 	vector<uint32>		 meshMaterialIndices;
 	vector<Material>  	 materials;
 	vector<Texture::Ptr> textures;
+	vector<shared_ptr<AreaLight>> emissionLights;
 };
