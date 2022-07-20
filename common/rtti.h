@@ -4,10 +4,12 @@
 
 namespace rtti {
 
+#define RTTI_SIZE(T) sizeof(T) / sizeof(float)
+
 	template<typename T>
 	struct TypeTrait {
 		static constexpr const char* name = "unknown";
-		static constexpr uint64		 size = sizeof(T) / 4;
+		static constexpr uint64		 size = RTTI_SIZE(T);
 	};
 
 	template<>
@@ -19,44 +21,44 @@ namespace rtti {
 	template<>
 	struct TypeTrait<int64> {
 		static constexpr const char* name = "int64";
-		static constexpr uint64		 size = 2;
+		static constexpr uint64		 size = RTTI_SIZE(int64);
 	};
 
 	template<>
 	struct TypeTrait<int32> {
 		static constexpr const char* name = "int32";
-		static constexpr uint64		 size = 1;
+		static constexpr uint64		 size = RTTI_SIZE(int32);
 	};
 
 	template<>
 	struct TypeTrait<uint64> {
 		static constexpr const char* name = "uint64";
-		static constexpr uint64		 size = 2;
+		static constexpr uint64		 size = RTTI_SIZE(uint64);
 	};
 
 	template<>
 	struct TypeTrait<uint32> {
 		static constexpr const char* name = "uint32";
-		static constexpr uint64		 size = 1;
+		static constexpr uint64		 size = RTTI_SIZE(uint32);
 	};
 
 
 	template<>
 	struct TypeTrait<Vector2f> {
 		static constexpr const char* name = "float2";
-		static constexpr uint64		 size = 2;
+		static constexpr uint64		 size = RTTI_SIZE(Vector2f);
 	};
 
 	template<>
 	struct TypeTrait<Vector3f> {
 		static constexpr const char* name = "float3";
-		static constexpr uint64		 size = 3;
+		static constexpr uint64		 size = RTTI_SIZE(Vector3f);
 	};
 
 	template<>
 	struct TypeTrait<Vector4f> {
 		static constexpr const char* name = "float4";
-		static constexpr uint64		 size = 4;
+		static constexpr uint64		 size = RTTI_SIZE(Vector4f);
 	};
 
 	struct VariableInfo {

@@ -1,7 +1,6 @@
 #pragma once
 #include "common/common.h"
 #include "common/rtti.h"
-#include <optional>
 
 class SamplerStream {
 	friend class Sampler;

@@ -36,18 +36,19 @@ struct BVHPrimitiveInfo {
 struct BVHIntersectInfo {
     uint32 primitiveIndex;
     Intersection intersection;
+    bool intersected;
     BVHIntersectInfo(const Intersection& inter,uint32 primitiveIndex) :
         primitiveIndex(primitiveIndex),intersection(inter) {}
-    BVHIntersectInfo() :primitiveIndex(std::numeric_limits<uint32>::max()) { intersection.intersected = false; }
+    BVHIntersectInfo() :primitiveIndex(std::numeric_limits<uint32>::max()) { intersected = false; }
 
     bool Intersected() {
-        return intersection.intersected;
+        return intersected;
     }
 };
 
 class BVHPrimitiveIntersector {
 public:
-    virtual Intersection Intersect(const Ray& r,uint32 primitiveIndex) = 0;
+    virtual bool Intersect(const Ray& r,uint32 primitiveIndex,Intersection& isect) = 0;
 };
 
 //use LBVH method by default
@@ -57,7 +58,7 @@ public:
 
     void Build(const vector<BVHPrimitive>& primitives,BVHPrimitiveIntersector* intersector);
     void Clear();
-    BVHIntersectInfo Intersect(const Ray& p);
+    bool Intersect(const Ray& p,BVHIntersectInfo& isect);
 
 
 private:

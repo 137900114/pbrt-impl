@@ -5,34 +5,33 @@
 #include "scene/texture.h"
 #include "accelerator/bvh.h"
 #include "light/light.h"
-#include <optional>
+#include "scene_primitive.h"
 
 using ModelID = uint32;
 using SceneObjectID = uint32;
 using LightID = uint32;
 
-
-struct IntersectSurfaceInfo {
-	//this normal has been normal mapped
-	Vector3f     normal;
-	Intersection intersection;
-
-	const Material* material;
-};
-
-
 class SceneObject {
+	friend class Scene;
 public:
 	al_add_ptr_t(SceneObject);
-	SceneObject(Model::Ptr& model, const Transform& transform);
+	SceneObject(Model::Ptr model, const Transform& transform);
+	SceneObject(ScenePrimitive::Ptr primitive, Material::Ptr mat,
+		const Transform& transform);
 
-	Transform& GetTransform() { return transform; }
+	Transform::Ptr GetTransform() { return transform; }
 	Model::Ptr GetModel() { return model; }
-
+	
+	ScenePrimitive::Ptr GetPrimitive() { return primitive; }
+	Material::Ptr GetMaterial() { return material; }
 private:
-	Transform transform;
+	Transform::Ptr transform;
 	Model::Ptr model;
+
+	ScenePrimitive::Ptr primitive;
+	Material::Ptr material;
 };
+
 
 class Scene {
 public:
@@ -48,13 +47,28 @@ public:
 
 	optional<ModelID>	LoadModel(const String& path);
 	SceneObjectID		CreateSceneObject(Model::Ptr model,const Transform& transform);
+	SceneObjectID		CreateSceneObject(ScenePrimitive::Ptr primitive, Material::Ptr mat,
+		const Transform& transform);
+
 	LightID				AddLightSource(Light::Ptr light);
 
 	LightID				GetLightSourceCount() { return lightSources.size(); }
 	Light::Ptr			GetLightSource(LightID id);
 
-	IntersectSurfaceInfo	Intersect(const Ray& r);
-	Texture::Ptr			GetTexture(uint32 texId);
+	/// <summary>
+	/// used for constructing tracing path
+	/// </summary>
+	/// <param name="r"></param>
+	/// <param name="info"></param>
+	/// <returns></returns>
+	bool			    Intersect(const Ray& r, SurfaceIntersection& info);
+	/// <summary>
+	/// used for visibility test
+	/// </summary>
+	/// <param name="r"></param>
+	/// <param name="isect"></param>
+	/// <returns></returns>
+	bool				Intersect(const Ray& r, Intersection& isect);
 private:
 	bool sceneBuildFlag : 1;
 
@@ -64,24 +78,18 @@ private:
 	vector<SceneObject::Ptr> sceneObjects;
 	
 	//cleared after every build
-	vector<Texture::Ptr>     texturePool;
-	vector<Material>         materialPool;
-	vector<Vertex>			 vertexPool;
-	vector<uint32>			 indexPool;
-	vector<uint32>			 primitiveMaterialIndex;
+	vector<ScenePrimitiveInfo> scenePrimtives;
 
 	//tree for acceleration
 	BVHTree tree;
 };
 
-class SceneIntersector : BVHPrimitiveIntersector {
+
+class SceneIntersector : public BVHPrimitiveIntersector {
 	friend class Scene;
 public:
-	SceneIntersector(const vector<uint32>* indexPool,const vector<Vertex>* vertexPool) :
-		indexPool(indexPool),vertexPool(vertexPool) {}
-	virtual Intersection Intersect(const Ray& r, uint32 primitiveIndex) override;
-
+	SceneIntersector(const vector<ScenePrimitiveInfo>& primitives):scenePrimitives(primitives) {}
+	virtual bool Intersect(const Ray& r, uint32 primitiveIndex,Intersection& isect) override;
 private:
-	const vector<uint32>* indexPool;
-	const vector<Vertex>* vertexPool;
+	const vector<ScenePrimitiveInfo>& scenePrimitives;
 };

@@ -5,8 +5,9 @@ bool VisiblityTester::Visible(shared_ptr<Scene> scene) {
 	Ray r;
 	r.o = p0;
 	r.d = dir;
-	Intersection isect = scene->Intersect(r).intersection;
-	return !isect.intersected || isect.t > distance;
+	SurfaceIntersection isect;
+	bool intersected = scene->Intersect(r,isect);
+	return !intersected || isect.isect.t > distance;
 }
 
 Light::Light(LIGHT_TYPE type,const Vector3f& intensity):

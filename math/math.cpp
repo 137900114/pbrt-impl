@@ -398,3 +398,10 @@ void Transform::RecomputeMatrix() {
     transInvWorld = Math::transpose(Math::inverse(world));
 }
 
+float Math::angle(float sinValue, float cosValue) {
+    float v = atan2f(sinValue, cosValue);
+    if (v < 0.f) {
+        v += 2 * pi;
+    }
+    return v;
+}

@@ -14,7 +14,7 @@ Mesh::Ptr Model::GetMesh(uint32 i) {
 	return meshs[i];
 }
 
-Material Model::GetMaterial(uint32 i) {
+Material::Ptr Model::GetMaterial(uint32 i) {
 	al_assert(i < materials.size(), "file-{0}:line-{1} index of material {2} is out of boundary (0~{3})",
 		__FILE__, __LINE__, i, materials.size());
 	return materials[i];
@@ -113,7 +113,7 @@ static Model::Ptr LoadByAssimp(const String& pathName) {
 
 	vector<Mesh::Ptr> 	 meshs;
 	vector<uint32>		 meshMaterialIndices;
-	vector<Material>  	 materials;
+	vector<Material::Ptr>  	 materials;
 	vector<Texture::Ptr> textures;
 
 	unordered_map<String, uint32>  texturePathMap;
@@ -123,9 +123,13 @@ static Model::Ptr LoadByAssimp(const String& pathName) {
 	for (size_t i = 0; i != scene->mNumMaterials; i++) {
 
 		aiMaterial* mat = scene->mMaterials[i];
-		Material material;
+		//TODO : a default bsdf for models
+		BSDF::Ptr  bsdf;
 
-		auto loadTexture = [&](aiTextureType type)-> int32 {
+		vector<TEXTURE_TYPE> materialTextureType;
+		vector<Texture::Ptr> materialTexture;
+		
+		auto loadTexture = [&](aiTextureType type)-> optional<uint32> {
 			if (mat->GetTextureCount(type) != 0) {
 				aiString str;
 				mat->GetTexture(type, 0, &str);
@@ -141,7 +145,7 @@ static Model::Ptr LoadByAssimp(const String& pathName) {
 				Texture::Ptr tex = Texture::Load(texPath);
 				if (tex == nullptr) {
 					al_log("Model::Load : fail to load texture {0}",ConvertToNarrowString(texPath));
-					return -1;
+					return {};
 				}
 				else {
 					int32 index = (int)textures.size();
@@ -151,11 +155,15 @@ static Model::Ptr LoadByAssimp(const String& pathName) {
 				}
 			}
 			else {
-				return -1;
+				return {};
 			}
 		};
 		al_for(i, 0, TEXTURE_TYPE_NUM) {
-			material.textureIndex[i] = loadTexture((aiTextureType)i);
+			auto v = loadTexture((aiTextureType)i);
+			if (v.has_value()) {
+				materialTextureType.push_back((TEXTURE_TYPE)i);
+				materialTexture.push_back(textures[v.value()]);
+			}
 		}
 
 		for (size_t i = 0; i != mat->mNumProperties; i++) {
@@ -163,18 +171,21 @@ static Model::Ptr LoadByAssimp(const String& pathName) {
 
 			float* data = reinterpret_cast<float*>(prop->mData);
 			if (strstr(prop->mKey.C_Str(), "diffuse")) {
-				material.diffuseColor = Vector3f(data[0],data[1],data[2]);
+				bsdf->SetParameterByName("diffuse", Vector3f(data));
 			}
 			else if (strstr(prop->mKey.C_Str(),"specular")) {
-				material.specular = Vector3f(data[0], data[1], data[2]);
+				bsdf->SetParameterByName("specular",Vector3f(data));
 			}
 			else if (strstr(prop->mKey.C_Str(),"roughness")) {
-				material.roughness = *data;
+				bsdf->SetParameterByName("roughness", *(float*)data);
 			}
 			else if (strstr(prop->mKey.C_Str(),"metallic")) {
-				material.metallic = *data;
+				bsdf->SetParameterByName("metallic", *(float*)data);
 			}
 		}
+		
+		Material::Ptr material(new Material(bsdf,nullptr,materialTexture.size(),
+			materialTexture.data(), materialTextureType.data()));
 
 		materials.push_back(material);
 	}
@@ -226,9 +237,69 @@ Mesh::Mesh(const vector<Vertex>& vertices,
 
 Model::Model(const vector<Mesh::Ptr>& meshs,
 	const vector<uint32>& meshMaterialIndices,
-	const vector<Material>& materials,
+	const vector<Material::Ptr>& materials,
 	const vector<Texture::Ptr>& textures,
 	const vector<AreaLight::Ptr>& lights):
 
 	meshs(meshs),meshMaterialIndices(meshMaterialIndices),
 	materials(materials),textures(textures){ }
+
+
+
+bool TriangleIntersect(const ScenePrimitiveInfo& info, const Ray& r, Intersection& isect) {
+	//v0,v1,v2 are under world coordinate so we don't need do any transform
+	Vertex v0 = info.data.triangle.v0, v1 = info.data.triangle.v1, v2 = info.data.triangle.v2;
+
+	if (!Math::ray_intersect(v0.position,v1.position,v2.position,r,
+		&isect.t,&isect.localUv,&isect.position)) {
+		return false;
+	}
+
+	isect.normal = Math::normalize(Math::interpolate3(v0.normal, v1.normal, v2.normal, isect.localUv));
+	Vector3f interplatedTangent = Math::normalize(Math::interpolate3(v0.tangent, v1.tangent, v2.tangent, isect.localUv));
+	Vector3f bitagent = Math::cross(isect.normal, interplatedTangent);
+	//make sure the tangent is vertical to normal
+	isect.tangent = Math::cross(interplatedTangent, isect.normal);
+	isect.uv = Math::interpolate3(v0.uv, v1.uv, v2.uv, isect.localUv);
+	return true;
+}
+
+Vertex TransformVertex(Vertex v,const Transform& trans) {
+	Vertex rv = v;
+	rv.position = Math::transform_point(trans.GetMatrix(), v.position);
+	//multiply a inverse transpose matrix to normals and tangents
+	rv.normal = Math::transform_vector(trans.GetTransInvMatrix(), v.normal);
+	rv.tangent = Math::transform_vector(trans.GetTransInvMatrix(), v.tangent);
+	return rv;
+}
+
+vector<ScenePrimitiveInfo> Model::GenerateScenePrimitiveInfos(
+	const Transform& trans) {
+	vector<ScenePrimitiveInfo> primitiveInfos;
+	al_for(i,0,meshs.size()) {
+		Mesh::Ptr mesh = meshs[i];
+		
+		for (uint32 j = 0; j < mesh->GetVertices().size();j += 3) {
+			ScenePrimitiveInfo info;
+			uint32 i0 = mesh->GetIndices()[i];
+			uint32 i1 = mesh->GetIndices()[i];
+			uint32 i2 = mesh->GetIndices()[i];
+
+			info.data.triangle.v0 = TransformVertex(mesh->GetVertices()[i0], trans);
+			info.data.triangle.v1 = TransformVertex(mesh->GetVertices()[i1], trans);
+			info.data.triangle.v2 = TransformVertex(mesh->GetVertices()[i2], trans);
+			
+			Bound3f bound;
+			bound = Math::bound_merge(bound, info.data.triangle.v0.position);
+			bound = Math::bound_merge(bound, info.data.triangle.v1.position);
+			bound = Math::bound_merge(bound, info.data.triangle.v2.position);
+
+			info.bound = bound;
+			info.intersector = TriangleIntersect;
+			info.type = SCENE_PRIMITIVE_TYPE_TRIANGLE;
+			info.material = materials[meshMaterialIndices[i]];
+			primitiveInfos.push_back(info);
+		}
+	}
+	return std::move(primitiveInfos);
+}

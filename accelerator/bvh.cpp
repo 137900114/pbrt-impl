@@ -170,12 +170,11 @@ void BVHTree::Build(const vector<BVHPrimitive>& _primitives,BVHPrimitiveIntersec
 }
 
 //stakless tranverse
-BVHIntersectInfo BVHTree::Intersect(const Ray& r) {
+bool BVHTree::Intersect(const Ray& r,BVHIntersectInfo& info) {
     constexpr uint32 maxiumDepth = 64;
     uint32 toVisit[maxiumDepth] = { 0 },toVisitCount = 1;
 
-    BVHIntersectInfo info;
-
+    bool intersected = false;
     while (toVisitCount != 0 && toVisitCount < maxiumDepth) {
         BVHLeafNode& node = leafNodes[--toVisitCount];
         if (Math::ray_intersect(node.bound, r)) {
@@ -183,10 +182,11 @@ BVHIntersectInfo BVHTree::Intersect(const Ray& r) {
                 BVHPrimitiveInfo& primInfo = primitiveInfo[node.primitiveIndex];
                 al_for(i,0,node.primitiveCount) {
                     if (Math::ray_intersect(primInfo.primitive.aabb, r)) {
-                        Intersection inter = intersector->Intersect(r, primInfo.primitiveIndex + i);
-                        if (inter.intersected && inter.t < info.intersection.t) {
-                            info.intersection = inter;
+                        Intersection inter;
+                        intersected = intersector->Intersect(r, primInfo.primitiveIndex + i, inter);
+                        if (intersected && inter.t < info.intersection.t) {
                             info.primitiveIndex = node.primitiveIndex + 1;
+                            info.intersection = inter;
                         }
                     }
                     
@@ -205,7 +205,7 @@ BVHIntersectInfo BVHTree::Intersect(const Ray& r) {
         }
     }
 
-    return info;
+    return intersected;
 }
 
 

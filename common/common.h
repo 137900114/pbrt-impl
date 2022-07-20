@@ -6,6 +6,7 @@
 #include <memory>
 #include <new>
 #include <codecvt>
+#include <optional>
 using namespace std;
 
 #include <string.h>

@@ -197,6 +197,7 @@ struct Bound3f {
 };
 
 struct Transform {
+    al_add_ptr_t(Transform);
     Transform() :quat(Vector3f(0., 1., 0.), 0.) { RecomputeMatrix(); }
     Transform(const Vector3f& position, const Quaternion& quat, const Vector3f& scale) :
         position(position), quat(quat), scale(scale) {
@@ -212,6 +213,7 @@ struct Transform {
         scale = other.scale;
         world = other.world;
         transInvWorld = other.transInvWorld;
+        return *this;
     }
 
     void SetPosition(const Vector3f& position);
@@ -236,11 +238,12 @@ private:
 };
 
 struct Intersection {
-    bool  intersected;
     float t;
     Vector2f uv;
     Vector2f localUv;
     Vector3f position;
+    Vector3f normal;
+    Vector3f tangent;
 };
 
 
@@ -252,6 +255,9 @@ namespace Math {
     }
 
     float frac(float v);
+
+    //from sin and cos to 0~2pi radius
+    float angle(float sinValue,float cosValue);
 
     Vector3f vmax(const Vector3f& a,const Vector3f& b);
 

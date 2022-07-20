@@ -1,101 +1,48 @@
 #include "scene.h"
 #include "math/math.h"
+#include "light/area_light.h"
 
-Intersection SceneIntersector::Intersect(const Ray& r, uint32 primitiveIndex) {
-	uint32 indexOffset = primitiveIndex * 3;
-	uint32 v0i = (*indexPool)[indexOffset], v1i = (*indexPool)[indexOffset + 1],
-		v2i = (*indexPool)[indexOffset + 2];
-	Intersection inter;
-	Vertex v0 = (*vertexPool)[v0i], v1 = (*vertexPool)[v1i], v2 = (*vertexPool)[v2i];
-	if (Math::ray_intersect(v0.position,v1.position,v2.position,r,&inter.t,
-		&inter.localUv,&inter.position)) {
-		//recompute the uv
-		
-		Vector2f e1 = Math::vsub(v1.uv, v0.uv);
-		Vector2f e2 = Math::vsub(v2.uv, v0.uv);
-		inter.uv = Math::vadd(
-			Math::vadd(
-				Math::vmul(e1, inter.localUv.x),
-				Math::vmul(e2, inter.localUv.y)
-			),
-			v0.uv
-		);
-
-		inter.intersected = true;
+//TODO : support primitive insection
+bool SceneIntersector::Intersect(const Ray& r, uint32 primitiveIndex,Intersection& isect) {
+	const ScenePrimitiveInfo& primitive = scenePrimitives[primitiveIndex];
+	if (primitive.intersector(primitive,r,isect)) {
+		return true;
 	}
-	else {
-		inter.intersected = false;
-	}
-
-	return inter;
+	return false;
 }
 
 
 void Scene::Build() {
 	al_profile_event();
 	if (sceneBuildFlag) return;
+	scenePrimtives.clear();
+	tree.Clear();
 
 	//TODO currently we assume the scene objects have different model and textures
+	vector<BVHPrimitive> bounds;
 	al_for(i,0,sceneObjects.size()) {
-		Model::Ptr model = sceneObjects[i]->GetModel();
-		const Mat4x4& world = sceneObjects[i]->GetTransform().GetMatrix();
-		const Mat4x4& transInvWorld = sceneObjects[i]->GetTransform().GetTransInvMatrix();
-
-		uint32 materialOffset = materialPool.size();
-		uint32 textureOffset = texturePool.size();
-		al_for(j,0,model->TextureCount()) {
-			texturePool.push_back(model->GetTexture(j));
+		SceneObject::Ptr obj = sceneObjects[i];
+		ScenePrimitive::Ptr primitive = obj->GetPrimitive();
+		if (primitive != nullptr) {
+			ScenePrimitiveInfo info = primitive->GeneratePrimitiveInfo(*obj->GetTransform(),
+				obj->GetMaterial());
+			bounds.push_back(BVHPrimitive(info.bound));
+			scenePrimtives.push_back(info);
+			
 		}
-		al_for(j, 0, model->MaterialCount()) {
-			Material mat = model->GetMaterial(j);
-			al_for(k ,0 ,TEXTURE_TYPE_NUM){
-				if (mat.textureIndex[i] >= 0) {
-					mat.textureIndex[i] += textureOffset;
-				}
+		else {
+			Model::Ptr model = obj->GetModel();
+			vector<ScenePrimitiveInfo> infos = model->GenerateScenePrimitiveInfos(*obj->GetTransform());
+			al_for(i,0,infos.size()) {
+				bounds.push_back(BVHPrimitive(infos[i].bound));
 			}
-		}
-		al_for(j,0,model->MeshCount()) {
-			Mesh::Ptr mesh = model->GetMesh(j);
-			uint32 vertexOffset = vertexPool.size(),indiceOffset = indexPool.size();
-			const vector<Vertex>& vertices = mesh->GetVertices();
-			vertexPool.insert(vertexPool.end(), vertices.begin(), vertices.end());
-			al_for(k,0,vertices.size()) {
-				//adjust the vertex's position by transform
-				Vertex& vert = vertexPool[k + vertexOffset];
-				vert.normal = Math::transform_vector(transInvWorld,vert.normal);
-				vert.tangent = Math::transform_vector(transInvWorld, vert.tangent);
-				vert.position = Math::transform_point(world, vert.position);
-			}
-			const vector<uint32>& indice = mesh->GetIndices();
-			indexPool.insert(indexPool.end(), indice.begin(), indice.end());
-			al_for(k,0,indice.size()) {
-				indexPool[indiceOffset + k] += vertexOffset;
-			}
-			uint32 matIndex = model->GetMeshMaterialIndex(j);
-			uint32 primitiveCount = indice.size() / 3;
-			primitiveMaterialIndex.insert(primitiveMaterialIndex.end(), primitiveCount, matIndex + materialOffset);
+			scenePrimtives.insert(scenePrimtives.end(),infos.begin(), infos.end());
 		}
 	}
 
-	al_assert(indexPool.size() % 3 == 0, "Scene::Build we only support triangle mesh so the index pool must be multiple of 3");
-	uint32 primitiveCount = indexPool.size() / 3;
-	vector<BVHPrimitive> primitives;
-	primitives.reserve(primitiveCount);
-	
-	al_for(i, 0, primitiveCount) {
-		uint32 v0 = indexPool[i * 3], v1 = indexPool[i * 3 + 1],
-			v2 = indexPool[i * 3 + 2];
-		Bound3f bound;
-		bound = Math::bound_merge(bound, vertexPool[v0].position);
-		bound = Math::bound_merge(bound, vertexPool[v1].position);
-		bound = Math::bound_merge(bound, vertexPool[v2].position);
-
-		primitives.push_back(BVHPrimitive(bound));
-	}
-	SceneIntersector* intersector = al_new(SceneIntersector,&indexPool,&vertexPool);
-
+	SceneIntersector* intersector = al_new(SceneIntersector,scenePrimtives);
 	sceneBuildFlag = true;
-	tree.Build(primitives, intersector);
+	tree.Build(bounds, intersector);
 }
 
 Model::Ptr   Scene::GetModel(ModelID i) {
@@ -131,18 +78,35 @@ SceneObjectID Scene::CreateSceneObject(Model::Ptr model, const Transform& transf
 	sceneObjects.push_back(sobj);
 	//add a new object to the scene.set to build flag to false
 	sceneBuildFlag = false;
-	return (uint32)sceneObjects.size() - 1;
+	//currently models doesn't support light sources
+	return (SceneObjectID)sceneObjects.size() - 1;
+}
+
+SceneObjectID Scene::CreateSceneObject(ScenePrimitive::Ptr primitive, Material::Ptr mat,
+	const Transform& transform) {
+	SceneObject::Ptr sobj(new SceneObject(primitive, mat, transform));
+	sceneObjects.push_back(sobj);
+	auto areaLight = mat->GetEmission();
+	if (areaLight.has_value()) {
+		Light::Ptr lightSource = areaLight.value();
+		lightSources.push_back(lightSource);
+	}
+
+	sceneBuildFlag = false;
+	return (SceneObjectID)sceneObjects.size() - 1;
 }
 
 
-Texture::Ptr  Scene::GetTexture(uint32 texId){
-	al_assert(texId < texturePool.size(), "Scene::GetTexture texture is out of bondary");
-	return texturePool[texId];
-}
-
-SceneObject::SceneObject(Model::Ptr& model, const Transform& transform):model(model),
-	transform(transform){
+SceneObject::SceneObject(Model::Ptr model, const Transform& transform): model(model){
 	al_assert(model != nullptr, "SceneObject::SceneObject : model of a scene object should not be nullptr");
+	this->transform = Transform::Ptr(new Transform(transform));
+}
+
+SceneObject::SceneObject(ScenePrimitive::Ptr primitive, Material::Ptr mat,
+	const Transform& transform): material(mat),primitive(primitive) {
+	al_assert(primitive != nullptr, "SceneObject::SceneObject : scene primitive of a scene object should not be nullptr");
+	al_assert(mat != nullptr,"SceneObject::SceneObject : material of a scene object should not be nullptr");
+	this->transform = Transform::Ptr(new Transform(transform));
 }
 
 Light::Ptr Scene::GetLightSource(LightID id) {
@@ -158,49 +122,30 @@ LightID Scene::AddLightSource(Light::Ptr light) {
 		}
 	}
 	lightSources.push_back(light);
+	return lightSources.size() - 1;
 }
 
-IntersectSurfaceInfo Scene::Intersect(const Ray& r) {
+bool Scene::Intersect(const Ray& r,SurfaceIntersection& info) {
 	al_assert(sceneBuildFlag, "Scene::Intersect : scene must be built before any intersection test");
 
-	BVHIntersectInfo bvhInfo = tree.Intersect(r);
+	BVHIntersectInfo bvhInfo;
+	bool intersected = tree.Intersect(r,bvhInfo);
 	
-	IntersectSurfaceInfo info;
-	info.intersection = bvhInfo.intersection;
-
-	uint32 indexOffset = bvhInfo.primitiveIndex * 3;
-	uint32 v0i = indexPool[indexOffset], v1i = indexPool[indexOffset + 1],
-		v2i = indexPool[indexOffset + 2];
-
-	const Vertex& v0 = vertexPool[v0i], & v1 = vertexPool[v1i],
-		& v2 = vertexPool[v2i];
-		
-	info.material = &materialPool[primitiveMaterialIndex[bvhInfo.primitiveIndex]];
-	if (info.material->textureIndex[TEXTURE_TYPE_NORMALS] >= 0) {
-		Texture::Ptr normalMap = GetTexture(info.material->textureIndex[TEXTURE_TYPE_NORMALS]);
-		
-		Vector4f localNormalSample = normalMap->Sample(bvhInfo.intersection.uv, TEXTURE_SAMPLER_LINEAR);
-		
-		Vector3f localNormal = Vector3f(localNormalSample.x, localNormalSample.y, localNormalSample.z);
-		localNormal = Math::normalize(Math::vsub(Math::vmul(localNormal, 2.f), Vector3f(1.f, 1.f, 1.f)));
-
-		Vector3f normal = Math::normalize(Math::interpolate3(v0.normal, v1.normal, v2.normal, bvhInfo.intersection.localUv));
-		Vector3f tangent = Math::normalize(Math::interpolate3(v0.tangent, v1.tangent, v2.tangent, bvhInfo.intersection.localUv));
-		Vector3f bitangent = Math::cross(tangent, normal);
-
-		info.normal = Math::vadd(
-			Math::vadd(
-				Math::vmul(tangent	, localNormal.x), 
-				Math::vmul(bitangent, localNormal.y)
-			),
-				Math::vmul(normal	, localNormal.z)
-		);
-		info.normal = Math::normalize(info.normal);
+	if (intersected) {
+		ScenePrimitiveInfo& primitive = scenePrimtives[bvhInfo.primitiveIndex];
+		info = primitive.material->Intersect(bvhInfo.intersection, primitive.material);
 	}
-	else {
-		info.normal = Math::normalize(Math::interpolate3(v0.normal, v1.normal, v2.normal, bvhInfo.intersection.localUv));
+	
+	return intersected;
+}
+
+bool Scene::Intersect(const Ray& r, Intersection& isect) {
+	al_assert(sceneBuildFlag,"Scene::Intersect : scene must be built before any intersection test");
+	BVHIntersectInfo bvhInfo;
+	bool intersected = tree.Intersect(r, bvhInfo);
+
+	if (intersected) {
+		isect = bvhInfo.intersection;
 	}
-
-
-	return info;
+	return intersected;
 }

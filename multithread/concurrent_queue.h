@@ -2,7 +2,7 @@
 #include "common/common.h"
 #include <thread>
 #include <queue>
-#include <optional>
+#include <mutex>
 
 template<typename T>
 class ConcurrentQueue {
