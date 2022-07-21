@@ -123,8 +123,7 @@ static Model::Ptr LoadByAssimp(const String& pathName) {
 	for (size_t i = 0; i != scene->mNumMaterials; i++) {
 
 		aiMaterial* mat = scene->mMaterials[i];
-		//TODO : a default bsdf for models
-		BSDF::Ptr  bsdf;
+		BSDF::Ptr  bsdf(new LambertBSDF(Vector3f(1.f, 1.f, 1.f)));
 
 		vector<TEXTURE_TYPE> materialTextureType;
 		vector<Texture::Ptr> materialTexture;

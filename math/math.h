@@ -88,6 +88,8 @@ struct Vector4f {
         copy_memory(this, &vec);
         return *this;
     }
+
+    Vector3f XYZ() { return Vector3f(x, y, z); }
 };
 
 
@@ -345,6 +347,7 @@ namespace Math {
     bool   ray_intersect(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3, const Ray& r,
         param_out float* t, param_out Vector2f* uv, param_out Vector3f* position);
 
+    Vector3f color_blend(const Vector3f& c1, const Vector3f& c2);
 
     bool contains_nan(const Vector2f& v);
     bool contains_nan(const Vector3f& v);

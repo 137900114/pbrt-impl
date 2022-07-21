@@ -65,9 +65,11 @@ inline shared_ptr<spdlog::logger> _al_logger;
 #ifdef AL_USE_WIDE_STRING
 using String = wstring;
 #define AL_STR(s) L##s
+#define AL_TO_STR(n) std::to_wstring(n)
 #else
 using String = std::string;
 #define AL_STR(s) s
+#define AL_TO_STR(n) std::to_string(n)
 #endif
 
 String ConvertFromNarrowString(const std::string& str);

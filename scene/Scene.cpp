@@ -88,7 +88,9 @@ SceneObjectID Scene::CreateSceneObject(ScenePrimitive::Ptr primitive, Material::
 	sceneObjects.push_back(sobj);
 	auto areaLight = mat->GetEmission();
 	if (areaLight.has_value()) {
-		Light::Ptr lightSource = areaLight.value();
+		AreaLight::Ptr lightSource = areaLight.value();
+		//TODO : Werid api.May refactor it later
+		lightSource->SetTransform(sobj->GetTransform());
 		lightSources.push_back(lightSource);
 	}
 

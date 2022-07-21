@@ -19,6 +19,7 @@ Intersection Sphere::Sample(const Transform& trans,const Intersection& p,
 	al_assert(dc >= radius, "Sphere::Sample : currently we don't support sampling inside a sphere");
 
 	float sinThetaMax = radius / dc;
+	float cosThetaMax = sqrtf(1.f - sinThetaMax * sinThetaMax);
 	float sinTheta = sinThetaMax * seed.x;
 	float sinTheta2 = sinTheta * sinTheta;
 	float cosTheta = sqrtf(1 - sinTheta2);
@@ -59,6 +60,9 @@ Intersection Sphere::Sample(const Transform& trans,const Intersection& p,
 	float alpha = Math::angle(sinAlpha, cosAlpha);
 	isect.uv = Vector2f(phi / 2 * Math::pi, alpha / Math::pi);
 	isect.localUv = isect.uv;
+
+	//uniform cone area
+	*pdf = 1.f / (2.f * Math::pi * (1 - cosThetaMax));
 
 	return isect;
 }

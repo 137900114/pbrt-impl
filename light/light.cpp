@@ -26,7 +26,7 @@ Vector3f Light::DeltaIntensity(const Intersection& isect, Vector3f* wi, Visiblit
 	return Vector3f();
 }
 
-Vector3f Light::SampleIntensity(const Intersection& isect, Vector3f* wi, float* pdf, VisiblityTester* tester) {
+Vector3f Light::SampleIntensity(const Intersection& isect, const Vector2f& seed, Vector3f* wi, float* pdf, VisiblityTester* tester) {
 	return Vector3f();
 }
 

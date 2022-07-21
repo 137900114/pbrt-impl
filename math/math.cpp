@@ -366,6 +366,18 @@ namespace Math {
     bool contains_inf(const Vector4f& v) {
         return std::isinf(v.x) || std::isinf(v.y) || std::isinf(v.z) || std::isinf(v.w);
     }
+
+    Vector3f color_blend(const Vector3f& c1, const Vector3f& c2) {
+        return Vector3f(c1.x * c2.x, c1.y * c2.y, c1.z * c2.z);
+    }
+
+    float angle(float sinValue, float cosValue) {
+        float v = atan2f(sinValue, cosValue);
+        if (v < 0.f) {
+            v += 2 * pi;
+        }
+        return v;
+    }
 };
 
 Quaternion::Quaternion(const Vector3f& axis, float angle) {
@@ -396,12 +408,4 @@ void Transform::RecomputeMatrix() {
     world = Math::mat_transform(position, quat, scale);
 
     transInvWorld = Math::transpose(Math::inverse(world));
-}
-
-float Math::angle(float sinValue, float cosValue) {
-    float v = atan2f(sinValue, cosValue);
-    if (v < 0.f) {
-        v += 2 * pi;
-    }
-    return v;
 }

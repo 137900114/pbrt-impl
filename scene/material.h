@@ -107,9 +107,9 @@ enum TEXTURE_TYPE
 class BSDF {
 public:
 	al_add_ptr_t(BSDF);
-	virtual Vector3f Sample(Material* mat,const SurfaceIntersection& isect,const Vector3f& wo,
-		float* pdf) = 0;
-	virtual Vector3f Evaluate(Material* mat,const Vector3f& wo,const SurfaceIntersection& isect,
+	virtual Vector3f Sample(Material* mat,const SurfaceIntersection& isect,
+		const Vector2f& seed,const Vector3f& wo,float* pdf) = 0;
+	virtual Vector3f Evaluate(const Vector3f& wo,const SurfaceIntersection& isect,
 		const Vector3f& wi) = 0;
 	
 	bool SetParameterByName(const char* name,const char* type,const void* data);
@@ -121,6 +121,8 @@ public:
 
 	//every bsdf is should maintain reflection information of it's data
 	BSDF(rtti::Struct* pStruct,void* data);
+
+	virtual String ToString() { return AL_STR("to string for this bsdf is not supported!"); }
 
 private:
 	rtti::Struct* pStruct;
@@ -139,7 +141,7 @@ public:
 	optional<Texture::Ptr>          GetTexture(TEXTURE_TYPE type);
 	
 	static SurfaceIntersection Intersect(const Intersection& isect,Material::Ptr mat);
-	Vector3f SampleBSDF(const SurfaceIntersection& isect,const Vector3f& wo,float* pdf);
+	Vector3f SampleBSDF(const SurfaceIntersection& isect,const Vector2f& seed,const Vector3f& wo,float* pdf);
 	Vector3f EvaluateBSDF(const Vector3f& wo,const SurfaceIntersection& isect,const Vector3f& wi);
 
 	template<typename T>
@@ -157,4 +159,18 @@ struct SurfaceIntersection{
 	Intersection  isect;
 	Material::Ptr material;
 	Vector3f	  shadingNormal;
+};
+
+class LambertBSDF : public BSDF {
+public:
+	virtual Vector3f Sample(Material* mat, const SurfaceIntersection& isect,
+		const Vector2f& seed, const Vector3f& wo, float* pdf) override;
+	virtual Vector3f Evaluate(const Vector3f& wo, const SurfaceIntersection& isect,
+		const Vector3f& wi) override;
+	
+	LambertBSDF(const Vector3f& diffuse = Vector3f());
+
+	virtual String ToString() override;
+private:
+	Vector3f diffuse;
 };
