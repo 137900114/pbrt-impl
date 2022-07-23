@@ -6,14 +6,14 @@ Sphere::Sphere(float radius):radius(radius),r2(radius * radius) {
 
 Bound3f Sphere::GetBound(const Transform& trans) {
 	Bound3f b;
-	b.lower = Math::vadd(trans.GetPosition(), Vector3f(-radius, -radius, -radius));
-	b.upper = Math::vadd(trans.GetPosition(), Vector3f(radius, radius, radius));
+	b.lower = trans.GetPosition() - Vector3f(radius, radius, radius);
+	b.upper = trans.GetPosition() + Vector3f(radius, radius, radius);
 	return b;
 }
 
 Intersection Sphere::Sample(const Transform& trans,const Intersection& p,
 	const Vector2f& seed, float* pdf) {
-	Vector3f offset = Math::vsub(p.position, trans.GetPosition());
+	Vector3f offset = p.position - trans.GetPosition();
 	float dc = Math::length(offset);
 	//TODO:currently we don't support sample inside a sphere
 	al_assert(dc >= radius, "Sphere::Sample : currently we don't support sampling inside a sphere");
@@ -47,16 +47,10 @@ Intersection Sphere::Sample(const Transform& trans,const Intersection& p,
 	//calculate normal and position
 	Vector3f n(sinAlpha * cos(phi), cosAlpha, sinAlpha * sin(phi));
 	
+	//TODO:encapsulate this to a function
 	Intersection isect;
-	isect.normal =
-		Math::vadd(
-			  Math::vmul(wx, n.x),
-			Math::vadd(
-				  Math::vmul(wy, n.y),
-				Math::vmul(wz, n.z)
-			)
-		);
-	isect.position = Math::vadd(trans.GetPosition(), Math::vmul(isect.normal, radius));
+	isect.normal = wx* n.x + wy * n.y + wz * n.z;
+	isect.position = trans.GetPosition() + isect.normal * radius;
 	float alpha = Math::angle(sinAlpha, cosAlpha);
 	isect.uv = Vector2f(phi / 2 * Math::pi, alpha / Math::pi);
 	isect.localUv = isect.uv;
@@ -71,7 +65,7 @@ Intersection Sphere::Sample(const Transform& trans,const Intersection& p,
 bool SphereIntersect(const ScenePrimitiveInfo& info,const Ray& r, Intersection& isect) {
 	al_assert(info.type != SCENE_PRIMITIVE_TYPE_SPHERE, "SphereIntersect : invalid primitive intersector");
 	const Transform& trans = info.data.sphere.trans;
-	Vector3f o = Math::vsub(trans.GetPosition(), r.o);
+	Vector3f o = trans.GetPosition() - r.o;
 	float radius = info.data.sphere.radius;
 
 	float a = r.d.x * r.d.x + r.d.y * r.d.y + r.d.z * r.d.z;
@@ -91,8 +85,8 @@ bool SphereIntersect(const ScenePrimitiveInfo& info,const Ray& r, Intersection& 
 	if (t1 < 0) return false;
 
 	isect.t = t1;
-	isect.position = Math::vadd(Math::vmul(r.d, t1), r.o);
-	isect.normal = Math::normalize(Math::vsub(isect.position, trans.GetPosition()));
+	isect.position = (r.d * t1) + r.o;
+	isect.normal = Math::normalize(isect.position - trans.GetPosition());
 
 	float cosTheta = Math::clamp(isect.normal.y, -1.f, 1.f);
 	float sinTheta = sqrtf(1.f - cosTheta * cosTheta);

@@ -141,6 +141,14 @@ public:
 	optional<Texture::Ptr>          GetTexture(TEXTURE_TYPE type);
 	
 	static SurfaceIntersection Intersect(const Intersection& isect,Material::Ptr mat);
+	/// <summary>
+	/// importance sample a bsdf function
+	/// </summary>
+	/// <param name="isect">the intersection surface point</param>
+	/// <param name="seed">random seed for the sample</param>
+	/// <param name="wo">the view direction goes into the surface</param>
+	/// <param name="pdf">the posibility density of the sample</param>
+	/// <returns>the sampled direction</returns>
 	Vector3f SampleBSDF(const SurfaceIntersection& isect,const Vector2f& seed,const Vector3f& wo,float* pdf);
 	Vector3f EvaluateBSDF(const Vector3f& wo,const SurfaceIntersection& isect,const Vector3f& wi);
 

@@ -141,13 +141,10 @@ bool Scene::Intersect(const Ray& r,SurfaceIntersection& info) {
 	return intersected;
 }
 
-bool Scene::Intersect(const Ray& r, Intersection& isect) {
+bool Scene::Intersect(const Ray& r) {
 	al_assert(sceneBuildFlag,"Scene::Intersect : scene must be built before any intersection test");
 	BVHIntersectInfo bvhInfo;
 	bool intersected = tree.Intersect(r, bvhInfo);
 
-	if (intersected) {
-		isect = bvhInfo.intersection;
-	}
 	return intersected;
 }

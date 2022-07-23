@@ -2,7 +2,7 @@
 #include "common/common.h"
 #include <cmath>
 
-#define al_fequal(f1,f2) abs(f1 - f2) < 1e5
+#define al_fequal(f1,f2) (abs(f1 - f2) < 1e5)
 
 #define infinity std::numeric_limits<float>::max()
 #define infinity_i std::numeric_limits<uint32>::max()
@@ -273,30 +273,6 @@ namespace Math {
 
     Vector3f cross(const Vector3f& a,const Vector3f& b);
 
-    Vector4f vsub(const Vector4f& a, const Vector4f& b);
-
-    Vector4f vadd(const Vector4f& a, const Vector4f& b);
-
-    Vector4f vmul(const Vector4f& a, float f);
-
-    Vector4f vdiv(const Vector4f& a, float f);
-
-    Vector3f vsub(const Vector3f& a, const Vector3f& b);
-
-    Vector3f vadd(const Vector3f& a, const Vector3f& b);
-
-    Vector3f vmul(const Vector3f& a, float f);
-
-    Vector3f vdiv(const Vector3f& a, float f);
-
-    Vector2f vsub(const Vector2f& a, const Vector2f& b);
-
-    Vector2f vadd(const Vector2f& a, const Vector2f& b);
-
-    Vector2f vmul(const Vector2f& a, float f);
-
-    Vector2f vdiv(const Vector2f& a, float f);
-
     Mat4x4 multiply(const Mat4x4& a,const Mat4x4& b);
 
     Vector3f transform_point(const Mat4x4& m,const Vector3f& pt);
@@ -356,6 +332,8 @@ namespace Math {
     bool contains_inf(const Vector2f& v);
     bool contains_inf(const Vector3f& v);
     bool contains_inf(const Vector4f& v);
+
+    bool zero(const Vector3f& v);
 };
 
 //format vector values
@@ -384,3 +362,32 @@ template<> struct fmt::formatter<Vector4f> : fmt::formatter<std::string> {
         return formatter<string>::format(res, ctx);
     }
 };
+
+Vector2f operator-(const Vector2f& a, const Vector2f& b);
+Vector3f operator-(const Vector3f& a, const Vector3f& b);
+Vector4f operator-(const Vector4f& a, const Vector4f& b);
+
+Vector2f operator+(const Vector2f& a, const Vector2f& b);
+Vector3f operator+(const Vector3f& a, const Vector3f& b);
+Vector4f operator+(const Vector4f& a, const Vector4f& b);
+
+Vector2f operator*(const Vector2f& a, const Vector2f& b);
+Vector3f operator*(const Vector3f& a, const Vector3f& b);
+Vector4f operator*(const Vector4f& a, const Vector4f& b);
+
+Vector2f operator/(const Vector2f& a, const Vector2f& b);
+Vector3f operator/(const Vector3f& a, const Vector3f& b);
+Vector4f operator/(const Vector4f& a, const Vector4f& b);
+
+Vector2f operator*(const Vector2f& a, float b);
+Vector3f operator*(const Vector3f& a, float b);
+Vector4f operator*(const Vector4f& a, float b);
+
+Vector2f operator/(const Vector2f& a, float b);
+Vector3f operator/(const Vector3f& a, float b);
+Vector4f operator/(const Vector4f& a, float b);
+
+inline Vector2f operator*(float b, const Vector2f& a) { return a * b; }
+inline Vector3f operator*(float b, const Vector3f& a) { return a * b; }
+inline Vector4f operator*(float b, const Vector4f& a) { return a * b; }
+

@@ -21,20 +21,13 @@ SurfaceIntersection Material::Intersect(const Intersection& isect, Material::Ptr
 		Vector4f localNormalSample = normalMap->Sample(isect.uv, TEXTURE_SAMPLER_LINEAR);
 
 		Vector3f localNormal = Vector3f(localNormalSample.x, localNormalSample.y, localNormalSample.z);
-		localNormal = Math::normalize(Math::vsub(Math::vmul(localNormal, 2.f), Vector3f(1.f, 1.f, 1.f)));
+		localNormal = Math::normalize((localNormal * 2.f) - Vector3f(1.f, 1.f, 1.f));
 
 		Vector3f normal = isect.normal;
 		Vector3f tangent = isect.tangent;
 		Vector3f bitangent = Math::cross(tangent, normal);
-
-		sIsect.shadingNormal = Math::vadd(
-			Math::vadd(
-				Math::vmul(tangent, localNormal.x),
-				Math::vmul(bitangent, localNormal.y)
-			),
-			Math::vmul(normal, localNormal.z)
-		);
-		sIsect.shadingNormal = Math::normalize(sIsect.shadingNormal);
+		//TODO : encapsulate this to a function
+		sIsect.shadingNormal = Math::normalize(tangent* localNormal.x + normal * localNormal.y + bitangent * localNormal.z);
 	}
 	else {
 		sIsect.shadingNormal = isect.normal;
@@ -91,7 +84,7 @@ Vector3f LambertBSDF::Sample(Material* mat, const SurfaceIntersection& isect,
 	//generate concentric disk sample
 	// r = x
 	// theta = y / x * (pi / 4)
-	Vector2f p = Math::vsub(Math::vmul(seed, 2.f), Vector2f(1.f, 1.f));
+	Vector2f p = seed * 2.f - Vector2f(1.f, 1.f);
 	float r, theta;
 	if (std::abs(p.x) > std::abs(p.y)) {
 		r = p.x;
@@ -121,7 +114,7 @@ Vector3f LambertBSDF::Evaluate( const Vector3f& wo, const SurfaceIntersection& i
 		diffuse = Math::color_blend(diffuse, texDiffuse);
 	}
 	 
-	return Math::vdiv(diffuse, Math::pi);
+	return diffuse / Math::pi;
 }
 
 LambertBSDF::LambertBSDF(const Vector3f& diffuse):

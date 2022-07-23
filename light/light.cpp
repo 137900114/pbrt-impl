@@ -22,6 +22,14 @@ bool Light::IsDeltaType() {
 		type == LIGHT_TYPE_POINT;
 }
 
+bool Light::IsInfinity() {
+	return type == LIGHT_TYPE_INFINITY;
+}
+
+bool Light::IsArea() {
+	return type == LIGHT_TYPE_AREA;
+}
+
 Vector3f Light::DeltaIntensity(const Intersection& isect, Vector3f* wi, VisiblityTester* tester) {
 	return Vector3f();
 }
@@ -32,4 +40,12 @@ Vector3f Light::SampleIntensity(const Intersection& isect, const Vector2f& seed,
 
 Vector3f Light::SurfaceEmissionIntensity(const Intersection& isect, const Vector3f& w) {
 	return Vector3f();
+}
+
+Vector3f Light::InfiniteIntensity(const Ray& r) {
+	return Vector3f();
+}
+
+float Light::SamplePdf(const Intersection& isect, const Vector3f& wi) {
+	return 0.f;
 }

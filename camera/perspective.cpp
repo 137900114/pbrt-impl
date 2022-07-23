@@ -104,8 +104,8 @@ Ray PerspectiveCamera::GenerateRay(float s_time, Vector2f s_uv, Vector2f s_len,
 	if (lenRadius > 0.f) {
 		float ft = focusPlane * rv.invd.z;
 		Vector3f lenOffset(s_len.x * lenRadius, s_len.y * lenRadius, 0.f);
-		Vector3f fPos = Math::vadd(Math::vmul(rv.d, ft),rv.o);
-		rv = Ray(lenOffset, Math::normalize(Math::vsub(fPos, lenOffset)));
+		Vector3f fPos = rv.d * ft + rv.o;
+		rv = Ray(lenOffset, Math::normalize(fPos - lenOffset));
 	}
 
 	//from camera local space to world space

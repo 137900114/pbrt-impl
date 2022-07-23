@@ -154,11 +154,11 @@ void BVHTree::Build(const vector<BVHPrimitive>& _primitives,BVHPrimitiveIntersec
 
     al_for(i, 0, primitiveCount) {
         constexpr uint32 mortonScale = 1 << 10;
-        Vector3f offset = Math::vsub(_primitives[i].centorid, centorid);
+        Vector3f offset = _primitives[i].centorid - centorid;
         float mx = offset.x / (maxExtent.upper.x - maxExtent.lower.x);
         float my = offset.y / (maxExtent.upper.y - maxExtent.lower.y);
         float mz = offset.z / (maxExtent.upper.z - maxExtent.lower.z);
-        uint32 mortonCode = MortonCode(Math::vmul(Vector3f(mx, my, mz), (float)mortonScale));
+        uint32 mortonCode = MortonCode(Vector3f(mx, my, mz) * (float)mortonScale);
         primitives.push_back(BVHPrimitiveInfo(_primitives[i], i, mortonCode));
     }
 

@@ -300,5 +300,5 @@ vector<ScenePrimitiveInfo> Model::GenerateScenePrimitiveInfos(
 			primitiveInfos.push_back(info);
 		}
 	}
-	return std::move(primitiveInfos);
+	return primitiveInfos;
 }

@@ -196,41 +196,6 @@ namespace Math {
         return res;
     }
 
-    Vector3f vsub(const Vector3f& a, const Vector3f& b) {
-        return Vector3f(a.x - b.x, a.y - b.y, a.z - b.z);
-    }
-
-    Vector3f vadd(const Vector3f& a, const Vector3f& b) {
-        return Vector3f(a.x - b.x, a.y - b.y, a.z - b.z);
-    }
-
-    Vector3f vmul(const Vector3f& a, float f) {
-        return Vector3f(a.x * f, a.y * f, a.z * f);
-    }
-
-    Vector3f vdiv(const Vector3f& a, float f) {
-        al_assert(al_fequal(f, 0), "divide zero error");
-        return Vector3f(a.x / f, a.y / f, a.z / f);
-    }
-
-    Vector2f vsub(const Vector2f& a, const Vector2f& b) {
-        return Vector2f(a.x - b.x, a.y - b.y);
-    }
-
-    Vector2f vadd(const Vector2f& a, const Vector2f& b) {
-        return Vector2f(a.x + b.x, a.y + b.y);
-    }
-
-    Vector2f vmul(const Vector2f& a, float f) {
-        return Vector2f(a.x * f, a.y * f);
-    }
-
-    Vector2f vdiv(const Vector2f& a, float f) {
-        al_assert(al_fequal(f, 0), "divide zero error");
-        return Vector2f(a.x / f, a.x / f);
-    }
-
-
     Vector3f bound_centorid(const Bound3f& b) {
         float x = (b.upper.x + b.lower.x) * .5f;
         float y = (b.upper.y + b.lower.y) * .5f;
@@ -238,51 +203,34 @@ namespace Math {
         return Vector3f(x, y, z);
     }
 
-    Vector4f vsub(const Vector4f& a, const Vector4f& b) {
-        return Vector4f(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
-    }
-
-    Vector4f vadd(const Vector4f& a, const Vector4f& b) {
-        return Vector4f(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
-    }
-
-    Vector4f vmul(const Vector4f& a, float f) {
-        return Vector4f(a.x * f, a.y * f, a.z * f, a.w * f);
-    }
-
-    Vector4f vdiv(const Vector4f& a, float f) {
-        al_assert(al_fequal(f, 0), "Math::vdiv divide by zero");
-        return Vector4f(a.x / f, a.y / f, a.z / f, a.w / f);
-    }
-
     //v0 * (1 - b) + v1 * b
     Vector2f interpolate2(const Vector2f& v0, const Vector2f& v1, float b) {
-        return Math::vadd(Math::vmul(v0, 1.f - b), Math::vmul(v1, b));
+        return (v0 * (1.f - b)) + (v1 * b);
     }
 
     //v0 * (1 - b) + v1 * b
     Vector3f interpolate2(const Vector3f& v0, const Vector3f& v1, float b) {
-        return Math::vadd(Math::vmul(v0, 1.f - b), Math::vmul(v1, b));
+        return (v0 * (1.f - b)) + (v1 * b);
     }
 
     //v0 * (1 - b) + v1 * b
     Vector4f interpolate2(const Vector4f& v0, const Vector4f& v1, float b) {
-        return Math::vadd(Math::vmul(v0, 1.f - b), Math::vmul(v1, b));
+        return (v0 * (1.f - b)) + (v1 * b);
     }
 
     //v0 * (1 - u -  v) + v1 * u + v2 * v
     Vector2f interpolate3(const Vector2f& v0, const Vector2f& v1, const Vector2f& v2, const Vector2f& uv) {
-        return Math::vadd(Math::vadd(Math::vmul(v0, 1.f - uv.x - uv.y), Math::vmul(v1, uv.x)), Math::vmul(v2, uv.y));
+        return v0 * (1.f - uv.x - uv.y) + (v1 * uv.x) + (v2 * uv.y);
     }
 
     //v0 * (1 - u -  v) + v1 * u + v2 * v
     Vector3f interpolate3(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Vector2f& uv) {
-        return Math::vadd(Math::vadd(Math::vmul(v0, 1.f - uv.x - uv.y), Math::vmul(v1, uv.x)), Math::vmul(v2, uv.y));
+        return v0 * (1.f - uv.x - uv.y) + (v1 * uv.x) + (v2 * uv.y);
     }
 
     //v0 * (1 - u -  v) + v1 * u + v2 * v
     Vector4f interpolate3(const Vector4f& v0, const Vector4f& v1, const Vector4f& v2, const Vector2f& uv) {
-        return Math::vadd(Math::vadd(Math::vmul(v0, 1.f - uv.x - uv.y), Math::vmul(v1, uv.x)), Math::vmul(v2, uv.y));
+        return v0 * (1.f - uv.x - uv.y) + (v1 * uv.x) + (v2 * uv.y);
     }
 
 
@@ -311,8 +259,8 @@ namespace Math {
     bool   ray_intersect(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Ray& r,
         param_out float* t, param_out Vector2f* uv, param_out Vector3f* position) {
         
-        Vector3f e1 = vsub(v1, v0);
-        Vector3f e2 = vsub(v2,v0);
+        Vector3f e1 = v1 -  v0;
+        Vector3f e2 = v2 -  v0;
         // no need to normalize
         Vector3f N = cross(e1, e2);//N 
         float area2 = length(N);
@@ -325,17 +273,17 @@ namespace Math {
             return false;  //they are parallel so they don't intersect ! 
 
         // compute t (equation 3)
-        *t = - (dot(N,vsub(r.o , v0))) / NdotRayDirection;
+        *t = - (dot(N, r.o - v0)) / NdotRayDirection;
 
         // check if the triangle is in behind the ray
         if (*t < 0) return false;  //the triangle is behind 
 
         // compute the intersection point using equation 1
-        Vector3f P = vadd(vmul(r.d, *t),r.o);
+        Vector3f P = (r.d * *t) + r.o;
 
         float area = dot(N, N);
 
-        Vector3f Po = vsub(P, v0);
+        Vector3f Po = P - v0;
         float uarea = dot(cross(e1, Po), N);
         float varea = dot(cross(e2, Po), N);
         
@@ -378,6 +326,12 @@ namespace Math {
         }
         return v;
     }
+
+
+    bool zero(const Vector3f& v) {
+        return !al_fequal(v.x, 0.f) || !al_fequal(v.y, 0.f)
+            || !al_fequal(v.z, 0.f);
+    }
 };
 
 Quaternion::Quaternion(const Vector3f& axis, float angle) {
@@ -408,4 +362,79 @@ void Transform::RecomputeMatrix() {
     world = Math::mat_transform(position, quat, scale);
 
     transInvWorld = Math::transpose(Math::inverse(world));
+}
+
+
+Vector3f operator-(const Vector3f& a, const Vector3f& b) {
+    return Vector3f(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+Vector3f operator+(const Vector3f& a, const Vector3f& b) {
+    return Vector3f(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+Vector3f operator*(const Vector3f& a, float f) {
+    return Vector3f(a.x * f, a.y * f, a.z * f);
+}
+
+Vector3f operator/(const Vector3f& a, float f) {
+    al_assert(al_fequal(f, 0), "divide zero error");
+    return Vector3f(a.x / f, a.y / f, a.z / f);
+}
+
+Vector2f operator-(const Vector2f& a, const Vector2f& b) {
+    return Vector2f(a.x - b.x, a.y - b.y);
+}
+
+Vector2f operator+(const Vector2f& a, const Vector2f& b) {
+    return Vector2f(a.x + b.x, a.y + b.y);
+}
+
+Vector2f operator*(const Vector2f& a, float f) {
+    return Vector2f(a.x * f, a.y * f);
+}
+
+Vector2f operator/(const Vector2f& a, float f) {
+    al_assert(al_fequal(f, 0), "divide zero error");
+    return Vector2f(a.x / f, a.x / f);
+}
+
+Vector4f operator-(const Vector4f& a, const Vector4f& b) {
+    return Vector4f(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+
+Vector4f operator+(const Vector4f& a, const Vector4f& b) {
+    return Vector4f(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+Vector4f operator*(const Vector4f& a, float f) {
+    return Vector4f(a.x * f, a.y * f, a.z * f, a.w * f);
+}
+
+Vector4f operator/(const Vector4f& a, float f) {
+    al_assert(al_fequal(f, 0), "Math::vdiv divide by zero");
+    return Vector4f(a.x / f, a.y / f, a.z / f, a.w / f);
+}
+
+Vector2f operator*(const Vector2f& a, const Vector2f& b) {
+    return Vector2f(a.x * b.x, a.y * b.y);
+}
+Vector3f operator*(const Vector3f& a, const Vector3f& b) {
+    return Vector3f(a.x * b.x, a.y * b.y, a.z * b.z);
+}
+Vector4f operator*(const Vector4f& a, const Vector4f& b) {
+    return Vector4f(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+}
+
+Vector2f operator/(const Vector2f& a, const Vector2f& b) {
+    al_assert(al_fequal(b.x, 0) || al_fequal(b.y, 0), "Math::vdiv divide by zero");
+    return Vector2f(a.x / b.x, a.y / b.y);
+}
+Vector3f operator/(const Vector3f& a, const Vector3f& b) {
+    al_assert(al_fequal(b.x, 0) || al_fequal(b.y, 0) || al_fequal(b.z,0), "Math::vdiv divide by zero");
+    return Vector3f(a.x / b.x, a.y / b.y, a.z / b.z);
+}
+Vector4f operator/(const Vector4f& a, const Vector4f& b) {
+    al_assert(al_fequal(b.x, 0) || al_fequal(b.y, 0) || al_fequal(b.z,9) || al_fequal(b.w,0), "Math::vdiv divide by zero");
+    return Vector4f(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
 }

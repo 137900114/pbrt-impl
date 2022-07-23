@@ -12,7 +12,7 @@ void AreaLight::SetTransform(Transform::Ptr trans) {
 Vector3f AreaLight::SampleIntensity(const Intersection& isect, const Vector2f& seed, Vector3f* wi, float* pdf, VisiblityTester* tester) {
 	Intersection sample = primitive->Sample(*trans, isect, seed, pdf);
 	*tester = VisiblityTester(sample.position, isect.position);
-	*wi = Math::normalize(Math::vsub(isect.position, sample.position));
+	*wi = Math::normalize(isect.position - sample.position);
 
 	return intensity;
 }

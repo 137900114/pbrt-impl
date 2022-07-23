@@ -111,7 +111,7 @@ static uint8 floatToU8(float f) {
 }
 
 static Vector4f Interpolate(const Vector4f& v1,const Vector4f& v2,float blend) {
-	return Math::vadd(Math::vmul(v1, 1.f - blend), Math::vmul(v2, blend));
+	return v1 * (1.f - blend) +  v2 * blend;
 }
 
 Vector4f Texture::Sample(const Vector2f& _uv, TEXTURE_SAMPLER sampler) {

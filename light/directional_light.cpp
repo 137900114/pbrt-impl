@@ -7,7 +7,7 @@ constexpr float sceneBoundary = 1e5f;
 
 Vector3f DirectionalLight::DeltaIntensity(const Intersection& isect, Vector3f* wi,
 	VisiblityTester* tester) {
-	*tester = VisiblityTester(isect.position, Math::vmul(dir, -1), infinity);
+	*tester = VisiblityTester(isect.position,  dir * -1, infinity);
 
 	*wi = dir;
 	return intensity;

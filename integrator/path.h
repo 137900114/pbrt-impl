@@ -1,11 +1,10 @@
 #pragma once
-#include "integrator/integrator.h"
+#include "integrator/sampled_integrator.h"
 
 class PathIntegrator : public SampledIntegrator {
 public:
 	al_add_ptr_t(PathIntegrator);
 	PathIntegrator();
-
 	virtual void LogStatus() override;
 protected:
 

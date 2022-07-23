@@ -68,7 +68,7 @@ public:
 	/// <param name="r"></param>
 	/// <param name="isect"></param>
 	/// <returns></returns>
-	bool				Intersect(const Ray& r, Intersection& isect);
+	bool				Intersect(const Ray& r);
 private:
 	bool sceneBuildFlag : 1;
 
