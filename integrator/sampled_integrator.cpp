@@ -133,48 +133,95 @@ void SampledIntegrator::SetDirectLightEsitimateStrategy(DIRECT_LIGHT_ESITIMATE_S
 	this->esitimateStrategy = strategy;
 }
 
-Vector3f DirectLightBSDFImportanceSample(const SurfaceIntersection& isect, const Ray& r, Light::Ptr light,Sampler::Ptr sampler,
-	Scene::Ptr scene,float* lightPdf) {
+//see note 14.5
+Vector3f DirectLightBSDFImportanceSample(const SurfaceIntersection& isect, const Ray& r, Light::Ptr light, Sampler::Ptr sampler,
+	Scene::Ptr scene, float* scatterPdf) {
 	SamplerStream& stream = sampler->GetSamplerStream();
 	Vector2f sBsdf = stream.Sample2D();
 
 	Material::Ptr mat = isect.material;
-	Vector3f wi = mat->SampleBSDF(isect, sBsdf, r.d, lightPdf);
+	Vector3f wi = mat->SampleBSDF(isect, sBsdf, r.d, scatterPdf);
+
+	//? why abs
+	Vector3f bsdf = mat->EvaluateBSDF(r.d, isect, wi) * std::abs(Math::dot(isect.shadingNormal, wi));
 	
 	Vector3f L;
-	float pdf = light->SamplePdf(isect.isect, wi);
-	Ray visTester(isect.isect.position, wi);
-	SurfaceIntersection testRes;
-	if (light->IsArea() && scene->Intersect(visTester, testRes)) {
-		if (testRes.material->GetEmission() == light) {
-			L = light->SurfaceEmissionIntensity(testRes.isect, wi);
+	//scene intersection test is time consuming
+	if (!Math::zero(bsdf)) {
+		Ray visTester(isect.isect.position, wi);
+		SurfaceIntersection testRes;
+		if (scene->Intersect(visTester, testRes)) {
+			auto v = testRes.material->GetEmission();
+
+			if (v.has_value() && 
+				//compare address of two pointer
+				(void*)v.value().get() == (void*)light.get()) {
+				L = light->SurfaceEmissionIntensity(testRes.isect, wi);
+			}
+		}
+		else if (light->IsInfinity()) {
+			//a envoriment light
+			L = light->InfiniteIntensity(r);
 		}
 	}
-	else {
-		//a envoriment light
-		L = light->InfiniteIntensity(r);
-	}
-
-	Vector3f bsdf = mat->EvaluateBSDF(r.d, isect, wi);
+	
+	return L * bsdf;
 }
 
+//see note 14.5
 Vector3f DirectLightLightingImportanceSample(const SurfaceIntersection& isect, const Ray& r, Light::Ptr light, Sampler::Ptr sampler,
 	Scene::Ptr scene, float* lightPdf) {
 	SamplerStream& stream = sampler->GetSamplerStream();
 	Vector2f sLight = stream.Sample2D();
+	
+	VisiblityTester visTester;
+	Vector3f wi, Li = light->SampleIntensity(isect.isect, sLight, &wi, lightPdf, &visTester),bsdf;
 
-
+	if (!Math::zero(Li)) {
+		//this sample is not visible
+		if (!visTester.Visible(scene)) {
+			Li = Vector3f();
+		}
+		else {
+			Material::Ptr mat = isect.material;
+			bsdf = mat->EvaluateBSDF(r.d, isect, wi) * std::abs(Math::dot(isect.shadingNormal, wi));
+			Li = Li * bsdf;
+		}
+	}
+	return Li;
 }
 
+//see note 14.5
 Vector3f SampledIntegrator::EsitimateDirectLight(const SurfaceIntersection& isect, const Ray& r, Light::Ptr light, Sampler::Ptr sampler) {
 	switch (esitimateStrategy) {
-	case DIRECT_LIGHT_ESITIMATE_STRATEGY_BSDF:
-	case DIRECT_LIGHT_ESITIMATE_STRATEGY_LIGHT:
-	case DIRECT_LIGHT_ESITIMATE_STRATEGY_MIS:
+		case DIRECT_LIGHT_ESITIMATE_STRATEGY_BSDF: {
+			float pdf;
+			Vector3f L = DirectLightBSDFImportanceSample(isect, r, light, sampler, scene, &pdf);
+			return L / pdf;
+		}
+		case DIRECT_LIGHT_ESITIMATE_STRATEGY_LIGHT: {
+			float pdf;
+			Vector3f L = DirectLightLightingImportanceSample(isect, r, light, sampler, scene, &pdf);
+			return L / pdf;
+		}
+		case DIRECT_LIGHT_ESITIMATE_STRATEGY_MIS: {
+			float lightPdf, scatterPdf;
+			Vector3f L_light = DirectLightLightingImportanceSample(isect, r, light, sampler, scene, &lightPdf);
+			Vector3f L_scatter = DirectLightBSDFImportanceSample(isect, r, light, sampler, scene, &scatterPdf);
 
+			//sample weight
+			float nl = lightPdf * lightPdf, ns = scatterPdf * scatterPdf;
+			float W_light = nl / (nl + ns);
+			float W_scatter = ns / (nl + ns);
+
+			return L_light * (W_light / lightPdf) + L_scatter * (W_scatter / scatterPdf);
+		}
 	}
+	al_warn("SampledIntegrator::EsitimateDirectLight : invalid estimate strategy {}",(uint32)esitimateStrategy);
+	return Vector3f();
 }
 
+//see note 14.5
 Vector3f SampledIntegrator::SampleLightSource(const SurfaceIntersection& isect,const Ray& r,Sampler::Ptr sampler) {
 	switch (lightSampleStrategy) {
 		case LIGHT_SAMPLE_STRATEGY_ONE: {
