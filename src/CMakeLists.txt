@@ -1,0 +1,13 @@
+target_include_directories(Alex_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(Alex_exe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(app)
+add_subdirectory(accelerator)
+add_subdirectory(camera)
+add_subdirectory(math)
+add_subdirectory(multithread)
+add_subdirectory(common)
+add_subdirectory(scene)
+add_subdirectory(sampler)
+add_subdirectory(light)
+add_subdirectory(integrator)
