@@ -2,6 +2,7 @@ add_subdirectory(spdlog)
 add_subdirectory(stb)
 add_subdirectory(assimp)
 add_subdirectory(optick)
+add_subdirectory(gtest)
 
 message("add ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include to include directory")
 target_include_directories(Alex_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)

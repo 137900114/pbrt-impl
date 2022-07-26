@@ -30,3 +30,7 @@ add_dependencies(Alex_lib spdlog stb)
 add_dependencies(Alex_exe Alex_lib)
 target_link_libraries(Alex_lib spdlog stb assimp optick)
 target_link_libraries(Alex_exe Alex_lib)
+
+
+enable_testing()
+add_subdirectory(test)
