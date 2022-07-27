@@ -8,6 +8,17 @@ add_executable(Alex_exe "")
 
 #macro that marks some debug only code
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -DENABLE_PROFILE")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DRELEASE")
+
+#set compile flag to MT for debugging
+set(CompilerFlags
+        CMAKE_CXX_FLAGS
+        CMAKE_CXX_FLAGS_DEBUG
+        CMAKE_CXX_FLAGS_RELEASE
+        )
+foreach(CompilerFlag ${CompilerFlags})
+  message("MSVC flags: ${CompilerFlag}:${${CompilerFlag}}")
+endforeach()
 
 #macro that marks some release only code
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DRELEASE")

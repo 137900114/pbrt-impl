@@ -18,9 +18,9 @@ static uint32 Left3Shift(uint32 x) {
 }
 
 static uint32 MortonCode(const Vector3f& v) {
-    al_assert(v.x > 0, "build scene fail: v.x {0} should be greater than 0", v.x);
-    al_assert(v.y > 0, "build scene fail: v.y {0} should be greater than 0", v.y);
-    al_assert(v.z > 0, "build scene fail: v.z {0} should be greater than 0", v.z);
+    al_assert(v.x >= 0, "build scene fail: v.x {0} should be greater than 0", v.x);
+    al_assert(v.y >= 0, "build scene fail: v.y {0} should be greater than 0", v.y);
+    al_assert(v.z >= 0, "build scene fail: v.z {0} should be greater than 0", v.z);
     
     return (Left3Shift((uint32)v.z) << 2) | (Left3Shift((uint32)v.y) << 1) | Left3Shift((uint32)v.x);
 }
@@ -133,7 +133,7 @@ static uint32 BuildNode(vector<BVHLeafNode>& buildNodes,
 void BVHTree::Build(const vector<BVHPrimitive>& _primitives,BVHPrimitiveIntersector* intersector) {
     Clear();
 
-    al_assert(intersector == nullptr, "BVHTree::Build : the intersector should not be nullptr");
+    al_assert(intersector != nullptr, "BVHTree::Build : the intersector should not be nullptr");
 
     vector<BVHPrimitiveInfo>& primitives = primitiveInfo;
     vector<BVHLeafNode>&      buildNodes = leafNodes;
@@ -154,7 +154,7 @@ void BVHTree::Build(const vector<BVHPrimitive>& _primitives,BVHPrimitiveIntersec
 
     al_for(i, 0, primitiveCount) {
         constexpr uint32 mortonScale = 1 << 10;
-        Vector3f offset = _primitives[i].centorid - centorid;
+        Vector3f offset = _primitives[i].centorid - maxExtent.lower;
         float mx = offset.x / (maxExtent.upper.x - maxExtent.lower.x);
         float my = offset.y / (maxExtent.upper.y - maxExtent.lower.y);
         float mz = offset.z / (maxExtent.upper.z - maxExtent.lower.z);

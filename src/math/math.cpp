@@ -104,7 +104,11 @@ namespace Math {
 
     //code from https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/matrix-inverse
     Mat4x4 inverse(const Mat4x4& _m) {
-        Mat4x4 mat;
+        Mat4x4 mat(1.f,0.f,0.f,0.f,
+                   0.f,1.f,0.f,0.f,
+                   0.f,0.f,1.f,0.f,
+                   0.f,0.f,0.f,1.f
+        );
         Mat4x4 m = _m;
 
         for (unsigned column = 0; column < 4; ++column) {
@@ -175,7 +179,7 @@ namespace Math {
             1 - 2 * (y2 + z2)   , 2 * (xy - wz)     , 2 * (xz + wy)     , 1,
             2 * (xy + wz)       , 1 - 2 * (x2 + z2) , 2 * (yz - wx)     , 1,
             2 * (xz - wy)       , 2 * (yz + wx)     , 1 - 2 * (x2 + y2) , 1,
-            0                   , 0                 , 0                 , 0
+            0                   , 0                 , 0                 , 1
         );
     }
 
@@ -306,13 +310,16 @@ namespace Math {
     }
 
     bool contains_inf(const Vector2f& v) {
-        return std::isinf(v.x) || std::isinf(v.y);
+        return std::isinf(v.x) || std::isinf(v.y) || 
+            al_fequal(v.x, infinity) || al_fequal(v.y, infinity);
     }
     bool contains_inf(const Vector3f& v) {
-        return std::isinf(v.x) || std::isinf(v.y) || std::isinf(v.z);
+        return std::isinf(v.x) || std::isinf(v.y) || std::isinf(v.z)
+            || al_fequal(v.x, infinity) || al_fequal(v.y, infinity) || al_fequal(v.z, infinity);
     }
     bool contains_inf(const Vector4f& v) {
-        return std::isinf(v.x) || std::isinf(v.y) || std::isinf(v.z) || std::isinf(v.w);
+        return std::isinf(v.x) || std::isinf(v.y) || std::isinf(v.z) || std::isinf(v.w)
+            || al_fequal(v.x, infinity) || al_fequal(v.y, infinity) || al_fequal(v.z, infinity) || al_fequal(v.w, infinity);
     }
 
     Vector3f color_blend(const Vector3f& c1, const Vector3f& c2) {
@@ -329,8 +336,8 @@ namespace Math {
 
 
     bool zero(const Vector3f& v) {
-        return !al_fequal(v.x, 0.f) || !al_fequal(v.y, 0.f)
-            || !al_fequal(v.z, 0.f);
+        return al_fequal(v.x, 0.f) && al_fequal(v.y, 0.f)
+            && al_fequal(v.z, 0.f);
     }
 };
 
@@ -378,7 +385,7 @@ Vector3f operator*(const Vector3f& a, float f) {
 }
 
 Vector3f operator/(const Vector3f& a, float f) {
-    al_assert(al_fequal(f, 0), "divide zero error");
+    al_assert(!al_fequal(f, 0), "divide zero error");
     return Vector3f(a.x / f, a.y / f, a.z / f);
 }
 
@@ -395,8 +402,8 @@ Vector2f operator*(const Vector2f& a, float f) {
 }
 
 Vector2f operator/(const Vector2f& a, float f) {
-    al_assert(al_fequal(f, 0), "divide zero error");
-    return Vector2f(a.x / f, a.x / f);
+    al_assert(!al_fequal(f, 0), "divide zero error");
+    return Vector2f(a.x / f, a.y / f);
 }
 
 Vector4f operator-(const Vector4f& a, const Vector4f& b) {
@@ -412,7 +419,7 @@ Vector4f operator*(const Vector4f& a, float f) {
 }
 
 Vector4f operator/(const Vector4f& a, float f) {
-    al_assert(al_fequal(f, 0), "Math::vdiv divide by zero");
+    al_assert(!al_fequal(f, 0), "Math::vdiv divide by zero");
     return Vector4f(a.x / f, a.y / f, a.z / f, a.w / f);
 }
 
@@ -427,14 +434,48 @@ Vector4f operator*(const Vector4f& a, const Vector4f& b) {
 }
 
 Vector2f operator/(const Vector2f& a, const Vector2f& b) {
-    al_assert(al_fequal(b.x, 0) || al_fequal(b.y, 0), "Math::vdiv divide by zero");
+    al_assert(!al_fequal(b.x, 0) && !al_fequal(b.y, 0), "Math::vdiv divide by zero");
     return Vector2f(a.x / b.x, a.y / b.y);
 }
 Vector3f operator/(const Vector3f& a, const Vector3f& b) {
-    al_assert(al_fequal(b.x, 0) || al_fequal(b.y, 0) || al_fequal(b.z,0), "Math::vdiv divide by zero");
+    al_assert(!al_fequal(b.x, 0) && !al_fequal(b.y, 0) && !al_fequal(b.z,0), "Math::vdiv divide by zero");
     return Vector3f(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 Vector4f operator/(const Vector4f& a, const Vector4f& b) {
-    al_assert(al_fequal(b.x, 0) || al_fequal(b.y, 0) || al_fequal(b.z,9) || al_fequal(b.w,0), "Math::vdiv divide by zero");
+    al_assert(!al_fequal(b.x, 0) && !al_fequal(b.y, 0) && !al_fequal(b.z,0) && !al_fequal(b.w,0), "Math::vdiv divide by zero");
     return Vector4f(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
 }
+
+
+Mat4x4 operator*(const Mat4x4& a, const Mat4x4& b) {
+    return Math::multiply(a, b);
+}
+Vector4f operator*(const Mat4x4& a, const Vector4f& b) {
+    return Vector4f(a.a00 * b.x + a.a01 * b.y + a.a02 * b.z + a.a03 * b.w,
+        a.a10 * b.x + a.a11 * b.y + a.a12 * b.z + a.a13 * b.w,
+        a.a20 * b.x + a.a21 * b.y + a.a22 * b.z + a.a23 * b.w,
+        a.a30 * b.x + a.a31 * b.y + a.a32 * b.z + a.a33 * b.w);
+}
+
+Vector4f operator*(const Vector4f& b,const Mat4x4& a) {
+    return Vector4f(a.a00 * b.x + a.a10 * b.y + a.a20 * b.z + a.a30 * b.w,
+        a.a01 * b.x + a.a11 * b.y + a.a21 * b.z + a.a31 * b.w,
+        a.a02 * b.x + a.a12 * b.y + a.a22 * b.z + a.a32 * b.w,
+        a.a03 * b.x + a.a13 * b.y + a.a23 * b.z + a.a33 * b.w);
+}
+
+
+Vector2f Vector2f::I = Vector2f(1.f, 1.f);
+Vector3f Vector3f::I = Vector3f(1.f, 1.f, 1.f);
+Vector3f Vector3f::Up = Vector3f(0.f, 1.f, 0.f);
+Vector3f Vector3f::Forward = Vector3f(1.f, 0.f, 0.f);
+Vector3f Vector3f::Right = Vector3f(0.f, 0.f, 1.f);
+Vector4f Vector4f::I = Vector4f(1.f, 1.f, 1.f, 1.f);
+
+Quaternion Quaternion::I = Quaternion();
+Mat4x4 Mat4x4::I = Mat4x4(
+    1.f, 0.f, 0.f, 0.f,
+    0.f, 1.f, 0.f, 0.f,
+    0.f, 0.f, 1.f, 0.f,
+    0.f, 0.f, 0.f, 1.f
+);

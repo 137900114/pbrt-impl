@@ -2,7 +2,7 @@
 #include "common/common.h"
 #include <cmath>
 
-#define al_fequal(f1,f2) (abs(f1 - f2) < 1e5)
+#define al_fequal(f1,f2) (abs(f1 - f2) < 1e-4)
 
 #define infinity std::numeric_limits<float>::max()
 #define infinity_i std::numeric_limits<uint32>::max()
@@ -37,6 +37,8 @@ struct Vector2f {
     }
 
     Vector2f(float x,float y):x(x),y(y) {}
+
+    static Vector2f I;
 };
 
 
@@ -64,6 +66,11 @@ struct Vector3f {
         copy_memory(this, &vec);
         return *this;
     }
+
+    static Vector3f I;
+    static Vector3f Up;
+    static Vector3f Forward;
+    static Vector3f Right;
 };
 
 struct Vector4f {
@@ -91,6 +98,8 @@ struct Vector4f {
     }
 
     Vector3f XYZ() { return Vector3f(x, y, z); }
+
+    static Vector4f I;
 };
 
 
@@ -98,6 +107,11 @@ struct Quaternion {
     Vector4f val;
 
     Quaternion(const Quaternion& o):val(o.val) {}
+    /// <summary>
+    /// create a quaternion axis-angle
+    /// </summary>
+    /// <param name="axis">the axis of the quaternion</param>
+    /// <param name="angle">the angle the quaternion rotate around the axis(radian measure)</param>
     Quaternion(const Vector3f& axis, float angle);
     Quaternion():val(0.f,0.f,0.f,1.f) {}
 
@@ -105,6 +119,8 @@ struct Quaternion {
         val = q.val;
         return *this;
     }
+
+    static Quaternion I;
 };
 
 struct Ray {
@@ -169,6 +185,8 @@ struct Mat4x4{
     Vector4f column(uint32 i) const {
         return Vector4f(a[0][i], a[1][i], a[2][i], a[3][i]);
     }
+
+    static Mat4x4 I;
 };
 
 
@@ -391,4 +409,8 @@ Vector4f operator/(const Vector4f& a, float b);
 inline Vector2f operator*(float b, const Vector2f& a) { return a * b; }
 inline Vector3f operator*(float b, const Vector3f& a) { return a * b; }
 inline Vector4f operator*(float b, const Vector4f& a) { return a * b; }
+
+Mat4x4 operator*(const Mat4x4& a, const Mat4x4& b);
+Vector4f operator*(const Mat4x4& a, const Vector4f& b);
+Vector4f operator*(const Vector4f& b,const Mat4x4& a);
 
