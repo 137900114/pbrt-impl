@@ -255,11 +255,15 @@ Vector3f SampledIntegrator::SampleDirectLightSource(const SurfaceIntersection& i
 		case LIGHT_SAMPLE_STRATEGY_ONE: {
 			uint32 lightSourceCount = scene->GetLightSourceCount();
 			if (lightSourceCount == 0) return Vector3f();
+			
 			SamplerStream& stream = sampler->GetSamplerStream();
+			/*
 			float sLight = stream.Sample1D() * (float)lightSourceCount;
 			uint32 iLight = std::min((uint32)sLight, lightSourceCount - 1);
 			
 			Light::Ptr light = scene->GetLightSource(iLight);
+			*/
+			Light::Ptr light = scene->PickOneFiniteLightSources(stream.Sample1D());
 			//divide the pdf of the light sample
 			Vector3f L;
 			//light sources doesn't sample it self

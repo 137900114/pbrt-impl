@@ -104,10 +104,18 @@ Vector3f LambertBSDF::Sample(Material* mat, const SurfaceIntersection& isect,
 	//map it to sphere
 	Vector3f rv;
 	rv.x = r * cosf(theta);
-	rv.y = r * sinf(theta);
-	rv.z = Math::safeSqrtOneMinusSq(r);
+	rv.z = r * sinf(theta);
+	rv.y = Math::safeSqrtOneMinusSq(r);
 
-	*pdf = 1. / (2. * Math::pi);
+	float coswi = rv.y;
+
+	Vector3f n = isect.isect.normal;
+	Vector3f t = isect.isect.tangent;
+	Vector3f b = Math::cross(t, n);
+
+	rv = n * rv.y + b * rv.z + t * rv.x;
+
+	*pdf = coswi /  Math::pi;
 	return rv;
 }
 

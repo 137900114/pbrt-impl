@@ -16,6 +16,7 @@ void Scene::Build() {
 	if (sceneBuildFlag) return;
 	scenePrimtives.clear();
 	tree.Clear();
+	finiteLightSources.clear();
 
 	//TODO currently we assume the scene objects have different model and textures
 	vector<BVHPrimitive> bounds;
@@ -36,6 +37,12 @@ void Scene::Build() {
 				bounds.push_back(BVHPrimitive(infos[i].bound));
 			}
 			scenePrimtives.insert(scenePrimtives.end(),infos.begin(), infos.end());
+		}
+	}
+
+	al_for(i, 0, lightSources.size()) {
+		if (!lightSources[i]->IsInfinity()) {
+			finiteLightSources.push_back(lightSources[i]);
 		}
 	}
 
@@ -146,4 +153,10 @@ bool Scene::Intersect(const Ray& r) {
 	bool intersected = tree.Intersect(r, bvhInfo);
 
 	return intersected;
+}
+
+Light::Ptr Scene::PickOneFiniteLightSources(float seed) {
+	uint32 i = min((uint32)(seed * finiteLightSources.size()), 
+		(uint32)finiteLightSources.size() - 1);
+	return finiteLightSources[i];
 }

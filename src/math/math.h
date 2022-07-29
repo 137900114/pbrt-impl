@@ -274,6 +274,8 @@ namespace Math {
         return std::max(std::min(a, upper), lower);
     }
 
+   
+  
     float frac(float v);
 
     //from sin and cos to 0~2pi radius
@@ -283,9 +285,30 @@ namespace Math {
     // \/(1 - a * a)
     float safeSqrtOneMinusSq(float sinValue);
 
+    Vector2f vmax(const Vector2f& a, const Vector2f& b);
+
+    Vector2f vmin(const Vector2f& a, const Vector2f& b);
+
     Vector3f vmax(const Vector3f& a,const Vector3f& b);
 
     Vector3f vmin(const Vector3f& a,const Vector3f& b);
+
+    Vector4f vmax(const Vector4f& a, const Vector4f& b);
+
+    Vector4f vmin(const Vector4f& a, const Vector4f& b);
+
+    template<>
+    inline Vector2f clamp(Vector2f l, Vector2f lower, Vector2f upper) {
+        return vmax(vmin(l, upper), lower);
+    }
+    template<>
+    inline Vector3f clamp(Vector3f l, Vector3f lower, Vector3f upper) {
+        return vmax(vmin(l, upper), lower);
+    }
+    template<>
+    inline Vector4f clamp(Vector4f l, Vector4f lower, Vector4f upper) {
+        return vmax(vmin(l, upper), lower);
+    }
 
     float length(const Vector3f& vec);
 

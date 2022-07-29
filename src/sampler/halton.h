@@ -1,6 +1,7 @@
 #pragma once
 #include "sampler.h"
 
+//TODO need to be fixed in the future
 class HaltonSampler : public Sampler {
 public:
 	HaltonSampler(rtti::Struct* pStruct, uint32 samplePerPixel,uint32 streamSize);

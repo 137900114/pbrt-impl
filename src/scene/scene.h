@@ -55,6 +55,9 @@ public:
 	LightID				GetLightSourceCount() { return lightSources.size(); }
 	Light::Ptr			GetLightSource(LightID id);
 
+	//pick one finite light source from all the light sources
+	Light::Ptr			PickOneFiniteLightSources(float seed);
+
 	/// <summary>
 	/// used for constructing tracing path
 	/// </summary>
@@ -73,6 +76,7 @@ private:
 	bool sceneBuildFlag : 1;
 
 	vector<Light::Ptr>		 lightSources;
+	vector<Light::Ptr>		 finiteLightSources;
 	vector<String>			 modelPaths;
 	vector<Model::Ptr>		 models;
 	vector<SceneObject::Ptr> sceneObjects;

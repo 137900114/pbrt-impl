@@ -353,6 +353,34 @@ namespace Math {
         return al_fequal(v.x, 0.f) && al_fequal(v.y, 0.f)
             && al_fequal(v.z, 0.f);
     }
+
+
+
+    Vector2f vmax(const Vector2f& a, const Vector2f& b) {
+        return Vector2f(a.x > b.x ? a.x : b.x,
+            a.y > b.y ? a.y : b.y);
+    }
+
+    Vector2f vmin(const Vector2f& a, const Vector2f& b) {
+        return Vector2f(a.x < b.x ? a.x : b.x,
+            a.y < b.y ? a.y : b.y);
+    }
+
+    Vector4f vmax(const Vector4f& a, const Vector4f& b) {
+        return Vector4f(a.x > b.x ? a.x : b.x,
+            a.y > b.y ? a.y : b.y,
+            a.z > b.z ? a.z : b.z,
+            a.w > b.w ? a.w : b.w);
+    }
+
+    Vector4f vmin(const Vector4f& a, const Vector4f& b) {
+        return Vector4f(a.x < b.x ? a.x : b.x,
+            a.y < b.y ? a.y : b.y,
+            a.z < b.z ? a.z : b.z,
+            a.w < b.w ? a.w : b.w);
+    }
+
+    
 };
 
 Quaternion::Quaternion(const Vector3f& axis, float angle) {

@@ -285,6 +285,10 @@ Vector3f CEToneMapping(const Vector3f& value, float lum) {
 	);
 }
 
+Vector3f ClampToneMapping(const Vector3f& value, float lum) {
+	return Math::clamp(value, Vector3f(0.f, 0.f, 0.f), Vector3f(1.0f, 1.0f, 1.0f));
+}
+
 void Film::SetExposure(float exp) {
 	if (exp > 0.f) {
 		this->exposure = exp;

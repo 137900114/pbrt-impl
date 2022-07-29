@@ -77,6 +77,7 @@ protected:
 
 using ToneMapping = function<Vector3f(const Vector3f&, float)>;
 Vector3f CEToneMapping(const Vector3f& value,float lum);
+Vector3f ClampToneMapping(const Vector3f& value, float lum);
 
 class Film : public FloatTexture {
 public:
