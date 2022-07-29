@@ -18,16 +18,16 @@ Intersection Sphere::Sample(const Transform& trans,const Intersection& p,
 	//TODO:currently we don't support sample inside a sphere
 	al_assert(dc >= radius, "Sphere::Sample : currently we don't support sampling inside a sphere");
 
-	float sinThetaMax = radius / dc;
+	float sinThetaMax = Math::clamp(radius / dc, 0.0f, .9999f);
 	float cosThetaMax = sqrtf(1.f - sinThetaMax * sinThetaMax);
 	float sinTheta = sinThetaMax * seed.x;
-	float sinTheta2 = sinTheta * sinTheta;
+	float sinTheta2 = Math::clamp(sinTheta * sinTheta,0.0f,.9999f);
 	float cosTheta = sqrtf(1 - sinTheta2);
 	float dc2 = dc * dc;
 
 	//find alpha by solving triangle
-	float ds = dc * cosTheta - sqrtf(r2 - sinTheta2 * dc2);
-	float cosAlpha = (dc2 + r2 - ds * ds) / (2 * radius * dc);
+	float ds = dc * cosTheta - sqrtf(max(r2 - sinTheta2 * dc2, 0.f));
+	float cosAlpha = Math::clamp((dc2 + r2 - ds * ds) / (2 * radius * dc), -.9999f, .9999f);
 	float sinAlpha = sqrtf(1.f - cosAlpha * cosAlpha);
 
 	float phi = 2 * Math::pi * seed.y;
@@ -63,22 +63,21 @@ Intersection Sphere::Sample(const Transform& trans,const Intersection& p,
 
 
 bool SphereIntersect(const ScenePrimitiveInfo& info,const Ray& r, Intersection& isect) {
-	al_assert(info.type != SCENE_PRIMITIVE_TYPE_SPHERE, "SphereIntersect : invalid primitive intersector");
+	al_assert(info.type == SCENE_PRIMITIVE_TYPE_SPHERE, "SphereIntersect : invalid primitive intersector");
 	const Transform& trans = info.data.sphere.trans;
-	Vector3f o = trans.GetPosition() - r.o;
+	Vector3f o = r.o - trans.GetPosition();
 	float radius = info.data.sphere.radius;
 
-	float a = r.d.x * r.d.x + r.d.y * r.d.y + r.d.z * r.d.z;
 	float b = 2 * (r.d.x * o.x + r.d.y * o.y + r.d.z * o.z);
 	float c = o.x * o.x + o.y * o.y + o.z * o.z - radius * radius;
 
-	float delta = b * b - 4 * a * c;
+	float delta = b * b - 4 * c;
 	if (delta < 0) {
 		return false;
 	}
 	float sqrtDelta = sqrtf(delta);
-	float t1 = (-b + sqrtDelta) / (2 * a);
-	float t2 = (-b - sqrtDelta) / (2 * a);
+	float t1 = (-b + sqrtDelta) / 2;
+	float t2 = (-b - sqrtDelta) / 2;
 	if (t2 < t1) std::swap(t1, t2);
 
 	//TODO : currently we don't deal with intersection from inside
@@ -87,17 +86,19 @@ bool SphereIntersect(const ScenePrimitiveInfo& info,const Ray& r, Intersection& 
 	isect.t = t1;
 	isect.position = (r.d * t1) + r.o;
 	isect.normal = Math::normalize(isect.position - trans.GetPosition());
+	//push the intersection point a little forward
+	isect.position = isect.position + radius * 1e-3 * isect.normal;
 
-	float cosTheta = Math::clamp(isect.normal.y, -1.f, 1.f);
+	float cosTheta = Math::clamp(isect.normal.y, -.9999f, .9999f);
 	float sinTheta = sqrtf(1.f - cosTheta * cosTheta);
 
-	float sinPhi = Math::clamp(isect.normal.z / sinTheta, -1.f, 1.f);
-	float cosPhi = Math::clamp(isect.normal.x / sinTheta, -1.f, 1.f);
+	float sinPhi = Math::clamp(isect.normal.z / sinTheta, -.9999f, .9999f);
+	float cosPhi = Math::clamp(isect.normal.x / sinTheta, -.9999f, .9999f);
 
 	float theta = Math::angle(sinTheta, cosTheta),
 		phi = Math::angle(sinPhi, cosPhi);
 
-	isect.uv = Vector2f(phi / 2 * Math::pi, theta / Math::pi);
+	isect.uv = Vector2f(phi / (2 * Math::pi), theta / Math::pi);
 	isect.localUv = isect.uv;
 	//derive normal by theta
 	isect.tangent = Vector3f(cosTheta * cosPhi, -sinTheta, cosTheta * sinPhi);

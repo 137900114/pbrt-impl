@@ -28,6 +28,8 @@ public:
 	void SetLightSampleStrategy(LIGHT_SAMPLE_STRATEGY strategy);
 	void SetDirectLightEsitimateStrategy(DIRECT_LIGHT_ESITIMATE_STRATEGY strategy);
 
+	void DebugBreakAtPixel(uint32 x, uint32 y);
+
 	virtual void Render() override;
 protected:
 	virtual Vector3f Li(Ray r, Scene::Ptr scene,
@@ -44,4 +46,8 @@ protected:
 	uint32 maxDepth;
 	LIGHT_SAMPLE_STRATEGY lightSampleStrategy;
 	DIRECT_LIGHT_ESITIMATE_STRATEGY esitimateStrategy;
+
+#ifdef DEBUG
+	vector<uint32> bx, by;
+#endif
 };

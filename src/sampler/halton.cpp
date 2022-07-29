@@ -134,7 +134,7 @@ float HaltonSampler::SampleDimension(uint32 dimension) {
 }
 
 
-static uint32 InverseDigits(uint32 num,uint32 base,uint32 exp) {
+AL_PRIVATE uint32 InverseDigits(uint32 num,uint32 base,uint32 exp) {
 	uint32 res = 0;
 	al_for(i,0,exp) {
 		uint32 digit = num % base;

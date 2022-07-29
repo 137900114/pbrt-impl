@@ -16,27 +16,23 @@ public:
 	al_add_ptr_t(Camera);
 	Camera(uint32 width, uint32 height,const Transform& trans);
 	
-	BitTexture::Ptr GetFilm() { return film; }
 	virtual Ray     GenerateRay(float s_time,Vector2f s_uv,Vector2f s_len,
 		uint32 x, uint32 y) = 0;
-
-	//guassian filter
-	//Camera* GaussAntiAlise(uint32 radius);
-	Camera* DisableAntiAlise();
 
 	void WriteFilm(Vector3f color,uint32 x,uint32 y);
 	Transform& GetTransform();
 
+	void SetAAStrategy(FILM_AA aa);
+	void SetToneMappingAlgorithm(ToneMapping toneMapping);
+	void SetExposure(float exp);
+	bool SaveFilm(const String& path);
+
+	uint32 GetWidth() { return width; }
+	uint32 GetHeight() { return height; }
+
 	virtual ~Camera() {}
 protected:
-	BitTexture::Ptr film;
+	Film::Ptr film;
 	uint32 width, height;
 	Transform transform;
-
-	enum AA {
-		AA_NONE,
-		//AA_GAUSSIAN
-	} antiAlise;
-	//uint32 gaussRadius;
-	//vector<float> guassKernel;
 };

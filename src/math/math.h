@@ -35,8 +35,7 @@ struct Vector2f {
     Vector2f(const float* f) {
         x = f[0], y = f[1];
     }
-
-    Vector2f(float x,float y):x(x),y(y) {}
+    Vector2f(float x, float y);
 
     static Vector2f I;
 };
@@ -60,7 +59,7 @@ struct Vector3f {
         x = f[0], y = f[1], z = f[2];
     }
 
-    Vector3f(float x, float y, float z):x(x),y(y),z(z) {}
+    Vector3f(float x, float y, float z);
 
     const Vector3f& operator=(const Vector3f& vec) {
         copy_memory(this, &vec);
@@ -90,7 +89,7 @@ struct Vector4f {
         x = f[0], y = f[1], z = f[2], w = f[3];
     }
 
-    Vector4f(float x, float y, float z,float w) :x(x), y(y), z(z),w(w){}
+    Vector4f(float x, float y, float z, float w);
 
     const Vector4f& operator=(const Vector4f& vec) {
         copy_memory(this, &vec);
@@ -279,6 +278,10 @@ namespace Math {
 
     //from sin and cos to 0~2pi radius
     float angle(float sinValue,float cosValue);
+
+    //   /---------
+    // \/(1 - a * a)
+    float safeSqrtOneMinusSq(float sinValue);
 
     Vector3f vmax(const Vector3f& a,const Vector3f& b);
 

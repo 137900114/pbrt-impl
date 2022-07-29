@@ -1,6 +1,6 @@
 #include "common/common.h"
 
-static std::wstring NarrowStringToWideString(const std::string& s) {
+AL_PRIVATE std::wstring NarrowStringToWideString(const std::string& s) {
 	const char* chSrc = s.c_str();
 	size_t nDestSize = mbstowcs(NULL, chSrc, 0) + 1;
 	wchar_t* wchDest = new wchar_t[nDestSize];
@@ -11,7 +11,7 @@ static std::wstring NarrowStringToWideString(const std::string& s) {
 	return wstrResult;
 }
 
-static std::string WideStringToNarrowString(const std::wstring& str) {
+AL_PRIVATE std::string WideStringToNarrowString(const std::wstring& str) {
 	using convert_typeX = std::codecvt_utf8<wchar_t>;
 	std::wstring_convert<convert_typeX, wchar_t> converterX;
 	return converterX.to_bytes(str);

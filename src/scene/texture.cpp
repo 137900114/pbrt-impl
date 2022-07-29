@@ -12,17 +12,17 @@ Texture::Texture( uint32 width,uint32 height, uint32 dim):
 #include <filesystem>
 namespace fs = std::filesystem;
 
-static bool SupportedBySTBBitData(const fs::path& _ext) {
+AL_PRIVATE bool SupportedBySTBBitData(const fs::path& _ext) {
 	std::string extName = _ext.extension().string();
 	return extName == ".png" || extName == ".bmp" || extName == ".jpg" || extName == ".tga";
 }
 
-static bool SupportedBySTBFloatData(const fs::path& _ext) {
+AL_PRIVATE bool SupportedBySTBFloatData(const fs::path& _ext) {
 	std::string extName = _ext.extension().string();
 	return extName == ".hdr";
 }
 
-static std::tuple<void*, int,int,int> LoadRawDataBySTB(const wchar_t* filepath, bool filp_vertically) {
+AL_PRIVATE std::tuple<void*, int,int,int> LoadRawDataBySTB(const wchar_t* filepath, bool filp_vertically) {
 	void* data = nullptr;
 	int height, width,comp;
 	stbi_set_flip_vertically_on_load(filp_vertically);
@@ -86,7 +86,7 @@ Texture::Ptr Texture::Create(uint32 width, uint32 height, uint32 dim, TEXTURE_DA
 	return nullptr;
 }
 
-static Vector4f u32ToVector4(uint32 v) {
+AL_PRIVATE Vector4f u32ToVector4(uint32 v) {
 	return Vector4f(
 		(float)(v & 0xff) / 256.f,
 		(float)((v >> 8) & 0xff) / 256.f,
@@ -105,12 +105,12 @@ Vector4f BitTexture::At(uint32 x, uint32 y) {
 	return u32ToVector4(result);
 }
 
-static uint8 floatToU8(float f) {
+AL_PRIVATE uint8 floatToU8(float f) {
 	f = Math::clamp((f * 256.f), 0.f, 256.f - 1e-4f);
 	return (uint8)f;
 }
 
-static Vector4f Interpolate(const Vector4f& v1,const Vector4f& v2,float blend) {
+AL_PRIVATE Vector4f Interpolate(const Vector4f& v1,const Vector4f& v2,float blend) {
 	return v1 * (1.f - blend) +  v2 * blend;
 }
 
@@ -140,28 +140,6 @@ Vector4f Texture::Sample(const Vector2f& _uv, TEXTURE_SAMPLER sampler) {
 	}
 	al_assert(false , "Texture::Sample : invalid texture sampler type");
 	return Vector4f();
-}
-
-void BitTexture::Write(uint32 x, uint32 y, const Vector4f& value) {
-	al_assert(x < width&& y < height, "BitTexture::Write : index out of bondary ({},{}).Texture's size ({},{})",
-		x, y, width, height);
-	uint32 offset = (x + y * width) * dim;
-
-	textureData[offset + 0] = floatToU8(value.x);
-	textureData[offset + 1] = floatToU8(value.y);
-	textureData[offset + 2] = floatToU8(value.z);
-	if (dim == 4)textureData[offset + 3] = floatToU8(value.w);
-}
-
-void FloatTexture::Write(uint32 x, uint32 y, const Vector4f& value) {
-	al_assert(x < width&& y < height, "BitTexture::Write : index out of bondary ({},{}).Texture's size ({},{})",
-		x, y, width, height);
-	uint32 offset = (x + y * width) * dim;
-
-	textureData[offset + 0] = value.x;
-	textureData[offset + 1] = value.y;
-	textureData[offset + 2] = value.z;
-	if (dim == 4)textureData[offset + 3] = value.w;
 }
 
 Vector4f FloatTexture::At(uint32 x, uint32 y) {
@@ -198,12 +176,21 @@ struct TextureWriteFuncContext {
 	FILE* pFile;
 };
 
-static void TextureWriteFunc(void* context,void* data,int size) {
+AL_PRIVATE void TextureWriteFunc(void* context,void* data,int size) {
 	FILE* pFile = ((TextureWriteFuncContext*)context)->pFile;
 	fwrite(data, size, 1, pFile);
 }
 
-bool BitTexture::Save(const String& _path) {
+template<typename T>
+T* ZeroMalloc(uint32 width,uint32 height,uint32 dim) {
+	uint32 size = width * height * dim * sizeof(T);
+	void* data = al_malloc(size);
+	al_assert(data != nullptr, "out of memory");
+	zero_memory_s(data, size);
+	return (T*)data;
+}
+
+bool Film::Save(const String& _path) {
 	FILE* targetFile = nullptr;
 	
 	//get extension
@@ -217,18 +204,32 @@ bool BitTexture::Save(const String& _path) {
 	TextureWriteFuncContext ctx;
 	ctx.pFile = targetFile;
 
+	uint8* writeData = ZeroMalloc<uint8>(width, height, 3);
+	al_for(x,0,width) {
+		al_for(y,0,height) {
+			uint32 offset = (x + y * width) * 3;
+			Vector3f v(textureData[offset], textureData[offset + 1], textureData[offset + 2]);
+			v = v / sampleWeightData[x + y * width];
+			v = Math::vmin(Vector3f(255.9f, 255.9f, 255.9f), toneMapping(v, exposure) * 256.f);
+
+			writeData[offset] = (uint8)v.x;
+			writeData[offset + 1] = (uint8)v.y;
+			writeData[offset + 2] = (uint8)v.z;
+		}
+	}
+
 	int rv = 0;
 	if (extName == AL_STR(".png")) {
-		rv = stbi_write_png_to_func(TextureWriteFunc, &ctx, width, height, dim, textureData, 0);
+		rv = stbi_write_png_to_func(TextureWriteFunc, &ctx, width, height, dim, writeData, 0);
 	}
 	else if (extName == AL_STR(".jpg")) {
-		rv = stbi_write_jpg_to_func(TextureWriteFunc, &ctx, width, height, dim, textureData, 0);
+		rv = stbi_write_jpg_to_func(TextureWriteFunc, &ctx, width, height, dim, writeData, 0);
 	}
 	else if (extName == AL_STR(".bmp")) {
 		//default quality
-		rv = stbi_write_bmp_to_func(TextureWriteFunc, &ctx, width, height, dim, textureData);
+		rv = stbi_write_bmp_to_func(TextureWriteFunc, &ctx, width, height, dim, writeData);
 	}else if(extName == AL_STR(".tga")){
-		rv = stbi_write_tga_to_func(TextureWriteFunc, &ctx, width, height, dim, textureData);
+		rv = stbi_write_tga_to_func(TextureWriteFunc, &ctx, width, height, dim, writeData);
 	}
 	else {
 		rv = 0;
@@ -237,4 +238,58 @@ bool BitTexture::Save(const String& _path) {
 	}
 
 	return rv != 0;
+}
+
+void Film::SetAAStrategy(FILM_AA aa) {
+	aaStrategy = aa;
+	//TODO implement other strategies
+}
+
+
+Film::Film(uint32 width, uint32 height, FILM_AA aa)
+:FloatTexture(ZeroMalloc<float>(width,height,3), width, height, 3),
+ aaStrategy(aa) {
+	sampleWeightData = ZeroMalloc<float>(width, height, 1);
+	exposure = 1.f;
+	toneMapping = CEToneMapping;
+}
+
+void Film::Write(uint32 x, uint32 y, const Vector3f& value) {
+	al_assert(x < width&& y < height, "Film::Write : index out of bondary ({},{}).Texture's size ({},{})",
+		x, y, width, height);
+	
+	//TODO implement other strategies
+	uint32 offset = (x + y * width) * 3;
+	textureData[offset] += value.x;
+	textureData[offset + 1] += value.y;
+	textureData[offset + 2] += value.z;
+	
+	offset = x + y * width;
+	sampleWeightData[offset] += 1;
+}
+
+
+void Film::SetToneMappingAlgorithm(ToneMapping toneMapping) {
+	this->toneMapping = toneMapping;
+}
+
+Film::~Film() {
+	al_mfree(sampleWeightData);
+}
+
+Vector3f CEToneMapping(const Vector3f& value, float lum) {
+	return Vector3f::I - Vector3f(
+		expf(- lum * value.x),
+		expf(- lum * value.y),
+		expf(- lum * value.z)
+	);
+}
+
+void Film::SetExposure(float exp) {
+	if (exp > 0.f) {
+		this->exposure = exp;
+	}
+	else {
+		al_warn("Film::SetExposure : exposure should not be less than 0");
+	}
 }

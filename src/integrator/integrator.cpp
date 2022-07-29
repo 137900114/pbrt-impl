@@ -5,8 +5,8 @@ void Integrator::AttachCamera(Camera::Ptr camera) {
 	if (camera != nullptr) {
 		this->camera = camera;
 	}
-	rtWidth = camera->GetFilm()->GetWidth();
-	rtHeight = camera->GetFilm()->GetHeight();
+	rtWidth = camera->GetWidth();
+	rtHeight = camera ->GetHeight();
 }
 
 void Integrator::AttachScene(Scene::Ptr   scene) {

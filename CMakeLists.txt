@@ -6,11 +6,18 @@ project(Alex)
 add_library(Alex_lib "")
 add_executable(Alex_exe "")
 
+option(ENABLE_TEST "enable unit test cases" ON)
+
 #macro that marks some debug only code
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -DENABLE_PROFILE")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DRELEASE")
 
-#set compile flag to MT for debugging
+if(ENABLE_TEST)
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DENABLE_TEST")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DENABLE_TEST")
+endif()
+
+#print compile flags
 set(CompilerFlags
         CMAKE_CXX_FLAGS
         CMAKE_CXX_FLAGS_DEBUG
@@ -42,6 +49,8 @@ add_dependencies(Alex_exe Alex_lib)
 target_link_libraries(Alex_lib spdlog stb assimp optick)
 target_link_libraries(Alex_exe Alex_lib)
 
-
-enable_testing()
-add_subdirectory(test)
+if(ENABLE_TEST)
+  message("testing is enabled")
+  enable_testing()
+  add_subdirectory(test)
+endif()

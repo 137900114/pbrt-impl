@@ -1,9 +1,8 @@
 #include "bvh.h"
 
 
-
 //copied from pbrt
-static uint32 Left3Shift(uint32 x) {
+AL_PRIVATE uint32 Left3Shift(uint32 x) {
     al_assert(x <= (1 << 10),"build scene failed x:{0} should less than {1}",x,(1 << 10));
     if (x == (1 << 10)) --x;
     x = (x | (x << 16)) & 0b00000011000000000000000011111111;
@@ -17,7 +16,7 @@ static uint32 Left3Shift(uint32 x) {
     return x;
 }
 
-static uint32 MortonCode(const Vector3f& v) {
+AL_PRIVATE uint32 MortonCode(const Vector3f& v) {
     al_assert(v.x >= 0, "build scene fail: v.x {0} should be greater than 0", v.x);
     al_assert(v.y >= 0, "build scene fail: v.y {0} should be greater than 0", v.y);
     al_assert(v.z >= 0, "build scene fail: v.z {0} should be greater than 0", v.z);
@@ -26,14 +25,14 @@ static uint32 MortonCode(const Vector3f& v) {
 }
 
 template<uint32 nBitPerPass>
-static uint32 CalculateBucket(uint32 code,uint32 pass) {
+AL_PRIVATE uint32 CalculateBucket(uint32 code,uint32 pass) {
     constexpr uint32 mask = (1 << nBitPerPass) - 1;
     uint32 lowBit = pass * nBitPerPass;
     return (code >> lowBit) & mask;
 }
 
 
-static void RadixSort(vector<BVHPrimitiveInfo>& info) {
+AL_PRIVATE void RadixSort(vector<BVHPrimitiveInfo>& info) {
     constexpr uint32 nBits = 30;
     constexpr uint32 nBitPerPass = 6;
     constexpr uint32 nPass = nBits / nBitPerPass;
@@ -42,8 +41,8 @@ static void RadixSort(vector<BVHPrimitiveInfo>& info) {
     vector<BVHPrimitiveInfo> tmpBuffer(info.size());
     uint32 nPrimitive = info.size();
     al_for(pass,0,nPass) {
-        vector<BVHPrimitiveInfo>& in  = pass % 2 ? info : tmpBuffer;
-        vector<BVHPrimitiveInfo>& out = pass % 2 ? tmpBuffer : info;
+        vector<BVHPrimitiveInfo>& out  = pass % 2 ? info : tmpBuffer;
+        vector<BVHPrimitiveInfo>& in = pass % 2 ? tmpBuffer : info;
         
         uint32 bucketSize[nBucket] = { 0 };
         al_for(i, 0, nPrimitive) {
@@ -64,10 +63,10 @@ static void RadixSort(vector<BVHPrimitiveInfo>& info) {
 
 
 
-static uint32 BuildNode(vector<BVHLeafNode>& buildNodes,
-    uint32 pStart,uint32 pEnd,vector<BVHPrimitiveInfo>& primitives,uint32 bitIndex) {
+AL_PRIVATE uint32 BuildNode(vector<BVHLeafNode>& buildNodes,
+    uint32 pStart,uint32 pEnd,vector<BVHPrimitiveInfo>& primitives,int32 bitIndex) {
     //initialize a tree node
-    if (bitIndex < 0) {
+    if (bitIndex < 0 || pEnd - pStart <= 1) {
         buildNodes.push_back(BVHLeafNode());
         uint32 currNodeIndex = buildNodes.size() - 1;
 
@@ -97,7 +96,7 @@ static uint32 BuildNode(vector<BVHLeafNode>& buildNodes,
 
         uint32 searchStart = pStart, searchEnd = pEnd;
         while (searchStart  + 1 < searchEnd) {
-            uint32 mid = (searchStart - searchEnd) / 2 + searchStart;
+            uint32 mid = (searchEnd - searchStart) / 2 + searchStart;
             if ((primitives[pStart].motornCode & highestBitMask)
                 == (primitives[mid].motornCode & highestBitMask)) {
                 searchStart = mid;
@@ -165,28 +164,31 @@ void BVHTree::Build(const vector<BVHPrimitive>& _primitives,BVHPrimitiveIntersec
     RadixSort(primitives);
 
     constexpr int32 firstBitIndex = 29;
-    BuildNode(buildNodes, 0, buildNodes.size(),
+    BuildNode(buildNodes, 0, primitives.size(),
         primitives, firstBitIndex);
+
+    this->intersector = intersector;
 }
 
 //stakless tranverse
 bool BVHTree::Intersect(const Ray& r,BVHIntersectInfo& info) {
     constexpr uint32 maxiumDepth = 64;
     uint32 toVisit[maxiumDepth] = { 0 },toVisitCount = 1;
+    info.intersection.t = infinity;
 
     bool intersected = false;
     while (toVisitCount != 0 && toVisitCount < maxiumDepth) {
-        BVHLeafNode& node = leafNodes[--toVisitCount];
+        BVHLeafNode& node = leafNodes[toVisit[--toVisitCount]];
         if (Math::ray_intersect(node.bound, r)) {
             if (node.isLeaf) {
                 BVHPrimitiveInfo& primInfo = primitiveInfo[node.primitiveIndex];
                 al_for(i,0,node.primitiveCount) {
                     if (Math::ray_intersect(primInfo.primitive.aabb, r)) {
-                        Intersection inter;
-                        intersected = intersector->Intersect(r, primInfo.primitiveIndex + i, inter);
-                        if (intersected && inter.t < info.intersection.t) {
-                            info.primitiveIndex = node.primitiveIndex + 1;
-                            info.intersection = inter;
+                        Intersection isect;
+                        intersected |= intersector->Intersect(r, primInfo.primitiveIndex + i, isect);
+                        if (intersected && isect.t < info.intersection.t) {
+                            info.primitiveIndex = node.primitiveIndex;
+                            info.intersection = isect;
                         }
                     }
                     

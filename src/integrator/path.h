@@ -4,7 +4,7 @@
 class PathIntegrator : public SampledIntegrator {
 public:
 	al_add_ptr_t(PathIntegrator);
-	PathIntegrator();
+	PathIntegrator() {}
 	virtual void LogStatus() override;
 protected:
 

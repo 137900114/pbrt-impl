@@ -1,7 +1,7 @@
 #include "sampled_integrator.h"
 #include "multithread/concurrent_queue.h"
 #include "multithread/dispatcher.h"
-#include "sampler/halton.h"
+#include "sampler/rng.h"
 
 void SampledIntegrator::SetSamplePerPixel(uint32 spp) {
 	if (spp == 0) {
@@ -30,6 +30,7 @@ void SampledIntegrator::SetMaxDepth(uint32 depth) {
 	}
 }
 
+
 void SampledIntegrator::Render() {
 	al_assert(camera != nullptr, "SampledIntegrator::Render : a camera should be attached to integrator before rendering");
 	al_assert(scene != nullptr, "SampledIntegrator::Render : a scene  should be attached to integrator before rendering");
@@ -46,8 +47,8 @@ void SampledIntegrator::Render() {
 	ConcurrentQueue<Tile> taskQueue;
 
 	scene->Build();
-	al_for(y, 0, xTileCount) {
-		al_for(x, 0, yTileCount) {
+	al_for(y, 0, yTileCount) {
+		al_for(x, 0, xTileCount) {
 			Tile tile;
 			tile.offsetX = x * tileSize;
 			tile.offsetY = y * tileSize;
@@ -59,7 +60,7 @@ void SampledIntegrator::Render() {
 	}
 
 	uint32 sampleCount = EstimateSampleCount(scene);
-	Sampler::Ptr sampler(CreateSampler<HaltonSampler, CameraSample>(samplePerPixel, sampleCount));
+	Sampler::Ptr sampler(CreateSampler<RNGSampler, CameraSample>(samplePerPixel, sampleCount,114514));
 	mutex filmWriteMutex;
 	Camera::Ptr camera = this->camera;
 
@@ -83,13 +84,24 @@ void SampledIntegrator::Render() {
 				break;
 			}
 			Tile task = res.value();
-			al_for(yi, 0, task.width) {
-				al_for(xi, 0, task.height) {
+			
+			al_for(yi, 0, task.height) {
+				al_for(xi, 0, task.width) {
 					uint32 x = task.offsetX + xi;
 					uint32 y = task.offsetY + yi;
 
+#ifdef DEBUG
+					al_for(i,0,bx.size()) {
+						if (bx[i] == x && by[i] == y) {
+							__debugbreak();
+						}
+					}
+#endif
+					
+
 					localSampler->NextPixel(x, y);
 					al_for(s, 0, samplePerPixel) {
+						
 						localSampler->NextSample();
 
 						float s_time = *localSampler->GetSample(timeSampleIndex);
@@ -99,6 +111,7 @@ void SampledIntegrator::Render() {
 						Ray r = camera->GenerateRay(s_time, s_uv, s_len, x, y);
 
 						Vector3f L = Li(r, scene, localSampler);
+
 						if (Math::contains_nan(L)) {
 
 							al_warn("SampledIntegrator::Render : x {} y {} sample {} (s_time{},s_uv,s_len{}),"
@@ -116,6 +129,7 @@ void SampledIntegrator::Render() {
 								x, y, s, s_time, s_uv, s_len, L);
 							L = Math::vmax(L, Vector3f());
 						}
+						
 
 						camera->WriteFilm(L, x, y);
 					}
@@ -240,23 +254,43 @@ Vector3f SampledIntegrator::SampleDirectLightSource(const SurfaceIntersection& i
 	switch (lightSampleStrategy) {
 		case LIGHT_SAMPLE_STRATEGY_ONE: {
 			uint32 lightSourceCount = scene->GetLightSourceCount();
+			if (lightSourceCount == 0) return Vector3f();
 			SamplerStream& stream = sampler->GetSamplerStream();
 			float sLight = stream.Sample1D() * (float)lightSourceCount;
 			uint32 iLight = std::min((uint32)sLight, lightSourceCount - 1);
 			
 			Light::Ptr light = scene->GetLightSource(iLight);
 			//divide the pdf of the light sample
-			return EsitimateDirectLight(isect, r, light, sampler)
-				* lightSourceCount;
+			Vector3f L;
+			//light sources doesn't sample it self
+			if (auto v = isect.material->GetEmission();v.has_value()
+				&& (void*)v.value().get() == (void*)light.get()) {
+				L = Vector3f();
+			}
+			else {
+				L = EsitimateDirectLight(isect, r, light, sampler);
+			}
+			return L * lightSourceCount;
 		}
 		case LIGHT_SAMPLE_STRATEGY_ALL: {
 			Vector3f L;
 			al_for(i, 0, scene->GetLightSourceCount()) {
 				Light::Ptr light = scene->GetLightSource(i);
-				L = L + EsitimateDirectLight(isect, r, light, sampler);
+				//light sources doesn't sample it self
+				if (auto v = isect.material->GetEmission(); !v.has_value()
+					|| (void*)v.value().get() != (void*)light.get()) {
+					L = L + EsitimateDirectLight(isect, r, light, sampler);
+				}
 			}
 			return L;
 		}
 	}
 	return Vector3f();
+}
+
+
+void SampledIntegrator::DebugBreakAtPixel(uint32 x, uint32 y) {
+#ifdef DEBUG
+	bx.push_back(x), by.push_back(y);
+#endif
 }

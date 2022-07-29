@@ -5,7 +5,7 @@ Material::Material(BSDF::Ptr bsdf, shared_ptr<AreaLight> emission,
 	uint32 textureCount, Texture::Ptr* texture, TEXTURE_TYPE* types):
 	bsdf(bsdf),emission(emission) {
 	for (uint32 i = 0; i < textureCount; i++) {
-		al_assert(types[i] >= TEXTURE_TYPE_NUM, "Material::GetTexture : invalid texture type.out of bondary");
+		al_assert(types[i] < TEXTURE_TYPE_NUM, "Material::GetTexture : invalid texture type.out of bondary");
 		textures[types[i]] = texture[i];
 	}
 	al_assert(bsdf != nullptr, "a material's bsdf should not be nullptr");
@@ -47,7 +47,7 @@ Vector3f   Material::EvaluateBSDF(const Vector3f& wo, const SurfaceIntersection&
 }
 
 optional<Texture::Ptr>  Material::GetTexture(TEXTURE_TYPE type) {
-	al_assert(type >= TEXTURE_TYPE_NUM, "Material::GetTexture : invalid texture type.out of bondary");
+	al_assert(type < TEXTURE_TYPE_NUM, "Material::GetTexture : invalid texture type.out of bondary");
 	uint32 idx = (uint32)type;
 	Texture::Ptr res = textures[idx];
 	if (res == nullptr) {
@@ -105,7 +105,9 @@ Vector3f LambertBSDF::Sample(Material* mat, const SurfaceIntersection& isect,
 	Vector3f rv;
 	rv.x = r * cosf(theta);
 	rv.y = r * sinf(theta);
-	rv.z = sqrtf(1.f - r * r);
+	rv.z = Math::safeSqrtOneMinusSq(r);
+
+	*pdf = 1. / (2. * Math::pi);
 	return rv;
 }
 

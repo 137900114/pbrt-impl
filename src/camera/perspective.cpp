@@ -66,6 +66,7 @@ PerspectiveCamera::PerspectiveCamera(float fov, float lenRadius,
 	fov(Math::pi * .25f), //by default the fov is 90 degree 
 	lenRadius(0.f), near(0.1f), far(1000.f), aspectRatio((float)width / (float)height),
 	focusPlane((this->near + this->far) / 2.f) {
+
 	SetLenRadius(lenRadius);
 	SetNearPlane(near);
 	SetFarPlane(far);
@@ -95,10 +96,10 @@ Ray PerspectiveCamera::GenerateRay(float s_time, Vector2f s_uv, Vector2f s_len,
 		"should be less than the height of the film {}", y, height);
 
 	//add offset within a pixel for aa
-	float ndcX =   ((float)x + s_uv.x) / (float)height * 2.f  -  1.f,
+	float ndcX =   ((float)x + s_uv.x) / (float)height * 2.f  -  (float)width / (float)height,
 		  ndcY = - ((float)y + s_uv.y) / (float)height * 2.f  +  1.f;
 
-	Vector3f pFilm(ndcX * tanFov,ndcY * tanFov, 1.f);
+	Vector3f pFilm(ndcX ,ndcY , 1.f);
 
 	Ray rv(Vector3f(), Math::normalize(pFilm));
 	if (lenRadius > 0.f) {

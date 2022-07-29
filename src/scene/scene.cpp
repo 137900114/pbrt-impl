@@ -111,7 +111,7 @@ SceneObject::SceneObject(ScenePrimitive::Ptr primitive, Material::Ptr mat,
 }
 
 Light::Ptr Scene::GetLightSource(LightID id) {
-	al_assert(id >= lightSources.size(), "Scene::GetLightSource : light source id out of bondary");
+	al_assert(id < lightSources.size(), "Scene::GetLightSource : light source id out of bondary");
 	return lightSources[id];
 }
 

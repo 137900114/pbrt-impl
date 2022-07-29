@@ -109,3 +109,10 @@ std::wstring ConvertToWideString(const String& str);
 #define al_profile_save_capture(file)       OPTICK_SAVE_CAPTURE(file)
 
 #define al_add_ptr_t(Type) using Ptr = std::shared_ptr<Type>
+
+#ifdef ENABLE_TEST
+//function can be linked and tested by external test cases
+#define AL_PRIVATE
+#else
+#define AL_PRIVATE static
+#endif

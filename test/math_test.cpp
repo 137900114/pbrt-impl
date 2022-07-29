@@ -32,18 +32,7 @@ TEST(FloatPoint, FloatPoint) {
 	EXPECT_FALSE(al_fequal(1.f, 0.f)) << "1.f should not equal to 0.f";
 	EXPECT_TRUE(Math::isNan(*(float*)(&nan)));
 
-	Vector2f v1(*(float*)(&nan), 0), v2(0, *(float*)(&nan));
-	Vector3f v3(*(float*)(&nan), 0, 0), v4(0, *(float*)(&nan), 0), v5(0, 0, *(float*)(&nan));
-	Vector4f v6(*(float*)(&nan), 0, 0, 0), v7(0, *(float*)(&nan), 0, 0), v8(0, 0, *(float*)(&nan), 0), v9(0, 0, 0, *(float*)(&nan));
-	EXPECT_TRUE(Math::contains_nan(v1));
-	EXPECT_TRUE(Math::contains_nan(v2));
-	EXPECT_TRUE(Math::contains_nan(v3));
-	EXPECT_TRUE(Math::contains_nan(v4));
-	EXPECT_TRUE(Math::contains_nan(v5));
-	EXPECT_TRUE(Math::contains_nan(v6));
-	EXPECT_TRUE(Math::contains_nan(v7));
-	EXPECT_TRUE(Math::contains_nan(v8));
-	EXPECT_TRUE(Math::contains_nan(v9));
+	//TODO test contains_nan
 
 	Vector2f f1(infinity + infinity, 0), f2(0, infinity + infinity);
 	Vector3f f3(infinity + infinity, 0, 0), f4(0, infinity + infinity, 0), f5(0, 0, infinity + infinity);
@@ -169,6 +158,15 @@ TEST(VectorTest,VectorTest) {
 	FN(Math::interpolate3, Vector2f(1.4f, 1.2f), Vector2f(1, 1), Vector2f(2, 1), Vector2f(1, 2), Vector2f(0.4, 0.2f));
 	FN(Math::interpolate3, Vector3f(1.4f, 1.2f, 3.4f), Vector3f(1, 1, 3), Vector3f(2, 1, 4), Vector3f(1, 2, 3), Vector2f(0.4, 0.2));
 	FN(Math::interpolate3, Vector4f(1.4f, 1.2f, 3.4f, 5.2f), Vector4f(1, 1, 3, 5), Vector4f(2, 1, 4, 5), Vector4f(1, 2, 3, 6), Vector2f(0.4, 0.2f));
+
+
+	al_for(x,-1000,1000) {
+		al_for(y,-1000,1000) {
+			Vector3f v = Math::normalize(Vector3f(x, y, 1000 - x - y));
+			F2(Math::dot, v, v, 1);
+		}
+	}
+
 }
 
 
@@ -273,19 +271,19 @@ bool operator==(const Quaternion& q,const Vector4f& v) {
 
 
 TEST(QuaternionAndTransform, QuaternionAndTransform) {
-	Transform t1(Vector3f(1.f, 2.f, 3.f), Quaternion(Vector3f(0.f, 1.f, 0.f), Math::pi),Vector3f::I);
+	Transform t1(Vector3f(1.f, 2.f, 3.f), Quaternion(Vector3f(0.f, 1.f, 0.f), Math::pi), Vector3f::I);
 	Transform t2(Vector3f(1.f, 1.f, 4.f), Quaternion(Vector3f(0.f, 1.f, 0.f), Math::pi / 2.f), Vector3f::I);
 	Mat4x4 t1Mat(
 		-1, 0, 0, 1,
 		0, 1, 0, 2,
 		0, 0, -1, 3,
 		0, 0, 0, 1),
-	t2Mat(
-		0,0,1,1,
-		0,1,0,1,
-		-1,0,0,4,
-		0,0,0,1
-	);
+		t2Mat(
+			0, 0, 1, 1,
+			0, 1, 0, 1,
+			-1, 0, 0, 4,
+			0, 0, 0, 1
+		);
 
 	EXPECT_TRUE(t1.GetMatrix() == t1Mat) << "expected transform matrix " << t1Mat << " get:" << t1.GetMatrix();
 	EXPECT_TRUE(t2.GetMatrix() == t2Mat) << "expected transform matrix " << t2Mat << " get:" << t1.GetMatrix();
@@ -297,6 +295,98 @@ TEST(QuaternionAndTransform, QuaternionAndTransform) {
 	F2(Math::transform_vector, t1.GetMatrix(), p, vp1);
 	F2(Math::transform_point, t2.GetMatrix(), p, pp2);
 	F2(Math::transform_vector, t2.GetMatrix(), p, vp2);
+}
+
+TEST(BoundIntersectionTest, IntersectionTest) {
+	float max_x = 1.f, min_x = -1.f, max_y = 1.f, min_y = -1.f, max_z = 3.f, min_z = 2.f;
+	float eta = 0.f;
+	float ox = 0.f, oy = 0.f;
+
+	Bound3f bound(Vector3f(min_x, min_y, min_z), Vector3f(max_x, max_y, max_z));
+	uint32 cx = 1000, cy = 1000;
+	Vector3f o;
+	//intersection success test
+	al_for(x, 0, cx) {
+		al_for(y,0,cy) {
+			float px = (max_x - min_x - eta) * ((float)x / (float)cx - .5f) + ox;
+			float py = (max_y - min_y - eta) * ((float)y / (float)cy - .5f) + oy;
+			Vector3f p(px, py, min_z);
+			Ray r(o, Math::normalize(p - o));
+			ASSERT_TRUE(Math::ray_intersect(bound, r)) << "ray must hit the bound fail at :" << x << "," << y;
+		}
+	}
+
+
+	max_x = 1.f + eta, min_x = -1.f - eta, max_y = 1.f + eta, min_y = -1.f - eta;
+	//intersection fail test
+	al_for(x,0,cx) {
+		al_for(y,0,cy) {
+			float py = (max_y - min_y) * ((float)y / (float)cy - .5f) * 2.f + oy,px;
+			if (py > max_y || py < min_y) {
+				px = (max_x - min_x) * ((float)x / (float)cx - .5f) * 2.f + ox;
+			}
+			else if(x < cx / 2) {
+				px = (max_x - min_x) * ((float)x / (float)cx - .5f) + min_x - eta;
+			}
+			else {
+				px = (max_x - min_x) * ((float)x / (float)cx + .5f) + max_x + eta;
+			}
+			Vector3f p(px, py, min_z);
+			Ray r(o, Math::normalize(p - o));
+			EXPECT_FALSE(Math::ray_intersect(bound, r)) << "ray must not hit the bound fail at :" << x << "," << y;
+		}
+	}
+}
+
+#include "scene/scene_primitive.h"
+
+bool SphereIntersect(const ScenePrimitiveInfo& info, const Ray& r, Intersection& isect);
+
+TEST(SphereIntersectionTest, IntersectionTest) {
+	float max_x = 1.f, min_x = -1.f, max_y = 1.f, min_y = -1.f, z = 2.f;
+
+	ScenePrimitiveInfo info;
+	info.type = SCENE_PRIMITIVE_TYPE_SPHERE;
+	info.intersector = SphereIntersect;
+	info.material = make_shared<Material>(make_shared<LambertBSDF>(), nullptr, 0, nullptr, nullptr);
+	info.data.sphere.radius = 1;
+	info.data.sphere.trans = Transform(Vector3f(0, 0, z), Quaternion(), Vector3f::I);
+
+	uint32 cx = 1000, cy = 1000;
+	al_for(x, 500, cx) {
+		al_for(y, 500, cy) {
+			float px = (max_x - min_x) * ((float)x / (float)cx - .5f);
+			float py = (max_y - min_y) * ((float)y / (float)cy - .5f);
+			Vector3f p(px, py, z);
+			Ray r(Vector3f(), Math::normalize(p));
+			Intersection isect;
+			float cost = Math::dot(r.d, Vector3f(0, 0, z));
+			if (cost * cost < 3.f) {
+				EXPECT_FALSE(SphereIntersect(info,r, isect)) << x << "," << y;
+			}
+			else {
+				EXPECT_TRUE(SphereIntersect(info, r, isect)) << x << "," << y;
+			}
+		}
+	}
+	
+	info.data.sphere.trans = Transform(Vector3f(0, sinf(Math::pi / 3.f) * z, cosf(Math::pi / 3.f) * z), Quaternion(), Vector3f::I);
+	al_for(x, 500, cx) {
+		al_for(y, 500, cy) {
+			float px = (max_x - min_x) * ((float)x / (float)cx - .5f);
+			float py = (max_y - min_y) * ((float)y / (float)cy - .5f);
+			Vector3f p(px, py, z);
+			Ray r(Vector3f(), Math::normalize(p));
+			Intersection isect;
+			float cost = Math::dot(r.d, Vector3f(0, sinf(Math::pi / 3.f) * z, cosf(Math::pi / 3.f) * z));
+			if (cost * cost < 3.f) {
+				EXPECT_FALSE(SphereIntersect(info, r, isect)) << x << "," << y;
+			}
+			else {
+				EXPECT_TRUE(SphereIntersect(info, r, isect)) << x << "," << y;
+			}
+		}
+	}
 }
 
 

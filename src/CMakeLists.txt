@@ -11,3 +11,5 @@ add_subdirectory(scene)
 add_subdirectory(sampler)
 add_subdirectory(light)
 add_subdirectory(integrator)
+
+target_sources(Alex_lib PRIVATE core.h)

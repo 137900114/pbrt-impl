@@ -242,20 +242,34 @@ namespace Math {
         const Vector3f& o = r.o;
         
         uint32 sign[3];
-        sign[0] = r.d.x > 0, sign[1] = r.d.y > 0, sign[2] = r.d.z > 0;
+        //>= make this code work under r.d contains 0
+        sign[0] = r.d.x >= 0, sign[1] = r.d.y >= 0, sign[2] = r.d.z >= 0;
         float invx = 1.f / r.d.x, invy = 1.f / r.d.y, invz = 1.f / r.d.z;
 
-        float txmin = (bound.bound[sign[0]].x - o.x) * invx;
-        float txmax = (bound.bound[1 - sign[0]].x - o.x) * invx;
-        float tymin = (bound.bound[sign[1]].y - o.y) * invy;
-        float tymax = (bound.bound[1 - sign[1]].y - o.y) * invy;
-        float tzmin = (bound.bound[sign[2]].z - o.z) * invz;
-        float tzmax = (bound.bound[1 - sign[2]].z - o.z) * invz;
+        //code from https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+        float t1 = (bound.bound[sign[0]].x - o.x) * invx;
+        float t2 = (bound.bound[1 - sign[0]].x - o.x) * invx;
+        float t3 = (bound.bound[sign[1]].y - o.y) * invy;
+        float t4 = (bound.bound[1 - sign[1]].y - o.y) * invy;
+        float t5 = (bound.bound[sign[2]].z - o.z) * invz;
+        float t6 = (bound.bound[1 - sign[2]].z - o.z) * invz;
 
-        if ((txmin > tymax) || (tymin > txmax)) return false;
-        float tmax = std::fmax(txmax, tymax), tmin = std::fmin(txmin, tymin);
+        float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+        float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
-        if ((tmax < tzmin) || (tzmax < tmin)) return false;
+        // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+        // if tmin > tmax, ray doesn't intersect AABB
+        if (tmax < 0 || tmin > tmax)
+        {
+            return false;
+        }
+
+        return true;
+        
+        //if ((txmin > tymax) || (tymin > txmax)) return false;
+        //float tmax = std::fmax(txmax, tymax), tmin = std::fmin(txmin, tymin);
+
+        //if ((tmax < tzmin) || (tzmax < tmin)) return false;
         
         return true;
     }
@@ -479,3 +493,21 @@ Mat4x4 Mat4x4::I = Mat4x4(
     0.f, 0.f, 1.f, 0.f,
     0.f, 0.f, 0.f, 1.f
 );
+
+Vector3f::Vector3f(float x, float y, float z) :x(x), y(y), z(z) {
+    al_assert(!Math::contains_nan(*this), "constructed vector contains nan value");
+}
+
+Vector2f::Vector2f(float x, float y) :x(x), y(y) {
+    al_assert(!Math::contains_nan(*this), "constructed vector contains nan value");
+}
+
+Vector4f::Vector4f(float x, float y, float z,float w) :x(x), y(y), z(z),w(w) {
+    al_assert(!Math::contains_nan(*this), "constructed vector contains nan value");
+}
+
+
+float Math::safeSqrtOneMinusSq(float sinValue) {
+    float s = clamp(sinValue, -.9999f, .9999f);
+    return sqrtf(1 - s * s);
+}

@@ -55,9 +55,16 @@ Vector3f PathIntegrator::Li(Ray _r, Scene::Ptr scene,Sampler::Ptr sampler) {
 		float q = std::max(0.01f,1.f - std::max(pathAttenuation.x,std::max(pathAttenuation.y,pathAttenuation.z)));
 		if (stream.Sample1D() < q)  break;
 		pathAttenuation = pathAttenuation / (1 - q);
+
+		r = newRay;
+		depth++;
 	}
 
 	return L;
 }
 
 
+
+void PathIntegrator::LogStatus() {
+	//TODO
+}

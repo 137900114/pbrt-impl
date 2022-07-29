@@ -7,7 +7,7 @@ ConstantEnvironmentLight::ConstantEnvironmentLight(const Vector3f & intensity):
 //uniform sample on a hemisphere
 Vector3f ConstantEnvironmentLight::SampleIntensity(const Intersection& isect, const Vector2f& seed
 	, Vector3f* wi, float* pdf, VisiblityTester* tester) {
-	float sqrtOneMinusZeta1 = sqrtf(1 - seed.x * seed.x);
+	float sqrtOneMinusZeta1 = Math::safeSqrtOneMinusSq(seed.x);
 	
 	//see note 13.2
 	float z = seed.x;

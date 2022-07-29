@@ -33,7 +33,7 @@ uint32 Model::GetMeshMaterialIndex(uint32 i) {
 }
 
 
-static void processAiNode(vector<Mesh::Ptr>& meshs,vector<uint32> materialIndex, aiNode* node, const aiScene* scene) {
+AL_PRIVATE void processAiNode(vector<Mesh::Ptr>& meshs,vector<uint32> materialIndex, aiNode* node, const aiScene* scene) {
 	for (size_t i = 0; i != node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 
@@ -79,7 +79,7 @@ static void processAiNode(vector<Mesh::Ptr>& meshs,vector<uint32> materialIndex,
 	}
 }
 
-static Model::Ptr LoadByAssimp(const String& pathName) {
+AL_PRIVATE Model::Ptr LoadByAssimp(const String& pathName) {
 	Assimp::Importer imp;
 
 	FILE* f;
@@ -197,7 +197,7 @@ static Model::Ptr LoadByAssimp(const String& pathName) {
 	return model;
 }
 
-static bool supportedByAssimp(const wchar_t* extName) {
+AL_PRIVATE bool supportedByAssimp(const wchar_t* extName) {
 	static std::unordered_set<String> extNames = {
 		L".dae",L".xml",L".blend",L".bvh",L".3ds",L".ase",
 		L".glFT",L".ply",L".dxf",L".ifc",L".nff",L".smd",
