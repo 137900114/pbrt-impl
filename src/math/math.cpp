@@ -277,6 +277,7 @@ namespace Math {
     bool   ray_intersect(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Ray& r,
         param_out float* t, param_out Vector2f* uv, param_out Vector3f* position) {
         
+        /*
         Vector3f e1 = v1 -  v0;
         Vector3f e2 = v2 -  v0;
         // no need to normalize
@@ -306,7 +307,33 @@ namespace Math {
         float varea = dot(cross(e2, Po), N);
         
         if (uarea < 0 || varea < 0 || (uarea + varea) > 1.f) return false;
-        *uv = Vector2f(uarea / area, varea / area);
+        *uv = Vector2f(uarea / area, varea / area);*/
+
+        // [-D ]
+
+        //from paper https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
+        Vector3f e1 = v1 - v0;
+        Vector3f e2 = v2 - v0;
+        Vector3f o = r.o - v0;
+
+        Vector3f cross_d_e2 = Math::cross(r.d, e2);
+        float det = Math::dot(cross_d_e2, e1);
+
+        if (al_fequal(det, 0)) {
+            return false;
+        }
+        float invDet = 1.f / det;
+        float u, v;
+        u = Math::dot(cross_d_e2, o) * invDet;
+        if (u < 0.f || u > 1.f) return false;
+
+        Vector3f cross_o_e1 = Math::cross(o, e1);
+        v = Math::dot(cross_o_e1, r.d) * invDet;
+        if (v < 0.f || (u + v) > 1.f) return false;
+
+        *t = Math::dot(cross_o_e1, e2) * invDet;
+        *uv = Vector2f(u, v);
+        *position = *t * r.d + r.o;
 
         return true;  //this ray hits the triangle 
     }
@@ -510,8 +537,8 @@ Vector4f operator*(const Vector4f& b,const Mat4x4& a) {
 Vector2f Vector2f::I = Vector2f(1.f, 1.f);
 Vector3f Vector3f::I = Vector3f(1.f, 1.f, 1.f);
 Vector3f Vector3f::Up = Vector3f(0.f, 1.f, 0.f);
-Vector3f Vector3f::Forward = Vector3f(1.f, 0.f, 0.f);
-Vector3f Vector3f::Right = Vector3f(0.f, 0.f, 1.f);
+Vector3f Vector3f::Forward = Vector3f(0.f, 0.f, 1.f);
+Vector3f Vector3f::Right = Vector3f(1.f, 0.f, 0.f);
 Vector4f Vector4f::I = Vector4f(1.f, 1.f, 1.f, 1.f);
 
 Quaternion Quaternion::I = Quaternion();
@@ -538,4 +565,44 @@ Vector4f::Vector4f(float x, float y, float z,float w) :x(x), y(y), z(z),w(w) {
 float Math::safeSqrtOneMinusSq(float sinValue) {
     float s = clamp(sinValue, -.9999f, .9999f);
     return sqrtf(1 - s * s);
+}
+
+Vector2f operator+(const Vector2f& a, float b) {
+    return Vector2f(a.x + b, a.y + b);
+}
+Vector3f operator+(const Vector3f& a, float b) {
+    return Vector3f(a.x + b, a.y + b, a.z + b);
+}
+Vector4f operator+(const Vector4f& a, float b) {
+    return Vector4f(a.x + b, a.y + b, a.z + b, a.w + b);
+}
+
+Vector2f operator+(float b, const Vector2f& a) {
+    return Vector2f(b + a.x, b + a.y);
+}
+Vector3f operator+(float b, const Vector3f& a) {
+    return Vector3f(b + a.x, b + a.y, b + a.z);
+}
+Vector4f operator+(float b, const Vector4f& a) {
+    return Vector4f(b + a.x, b + a.y, b + a.z, b + a.w);
+}
+
+Vector2f operator-(const Vector2f& a, float b) {
+    return Vector2f(a.x - b, a.y - b);
+}
+Vector3f operator-(const Vector3f& a, float b) {
+    return Vector3f(a.x - b, a.y - b, a.z - b);
+}
+Vector4f operator-(const Vector4f& a, float b) {
+    return Vector4f(a.x - b, a.y - b, a.z - b, a.w - b);
+}
+
+Vector2f operator-(float b, const Vector2f& a) {
+    return Vector2f(b - a.x, b - a.y);
+}
+Vector3f operator-(float b, const Vector3f& a) {
+    return Vector3f(b - a.x, b - a.y, b - a.z);
+}
+Vector4f operator-(float b, const Vector4f& a) {
+    return Vector4f(b - a.x, b - a.y, b - a.z, b - a.w);
 }

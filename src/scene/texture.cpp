@@ -209,7 +209,8 @@ bool Film::Save(const String& _path) {
 		al_for(y,0,height) {
 			uint32 offset = (x + y * width) * 3;
 			Vector3f v(textureData[offset], textureData[offset + 1], textureData[offset + 2]);
-			v = v / sampleWeightData[x + y * width];
+			if (sampleWeightData[x + y * width] != 0)
+				v = v / sampleWeightData[x + y * width];
 			v = Math::vmin(Vector3f(255.9f, 255.9f, 255.9f), toneMapping(v, exposure) * 256.f);
 
 			writeData[offset] = (uint8)v.x;

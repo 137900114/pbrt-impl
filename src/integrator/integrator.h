@@ -15,10 +15,31 @@ public:
 
 	virtual void Render() = 0;
 	virtual void LogStatus() = 0;
+	
 
+	void DebugBreakAtPixel(uint32 x,uint32 y);
 	virtual ~Integrator();
 protected:
+
+	void CheckDebugBreak(uint32 x, uint32 y);
 	Camera::Ptr camera;
 	Scene::Ptr  scene;
 	uint32 rtWidth, rtHeight;
+
+#ifdef DEBUG
+	vector<uint32> bx, by;
+#endif
+};
+
+//for debug
+class NormalIntegrator : public Integrator {
+public:
+	NormalIntegrator() {}
+	virtual void Render() override;
+	virtual void LogStatus() override;
+
+	void ShowShadingNormal(bool v = true);
+
+private:
+	bool shadingNormal = false;
 };

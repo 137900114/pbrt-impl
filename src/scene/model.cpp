@@ -1,5 +1,6 @@
 #include "model.h"
 
+#include "mmd/Pmx.h"
 #include "assimp/importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
@@ -33,7 +34,7 @@ uint32 Model::GetMeshMaterialIndex(uint32 i) {
 }
 
 
-AL_PRIVATE void processAiNode(vector<Mesh::Ptr>& meshs,vector<uint32> materialIndex, aiNode* node, const aiScene* scene) {
+AL_PRIVATE void processAiNode(vector<Mesh::Ptr>& meshs,vector<uint32>& materialIndex, aiNode* node, const aiScene* scene) {
 	for (size_t i = 0; i != node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 
@@ -84,7 +85,7 @@ AL_PRIVATE Model::Ptr LoadByAssimp(const String& pathName) {
 
 	FILE* f;
 	if (errno_t error = _wfopen_s(&f, pathName.c_str(), L"rb"); error != 0) {
-		al_log("Model::Load : fail to open file {0} , reason {1}", ConvertToNarrowString(pathName), error);
+		al_log("Model::Load : fail to open file {0} , reason {1}", ConvertToNarrowString(pathName),string(strerror(error)));
 		return nullptr;
 	}
 	fseek(f, 0, SEEK_END);
@@ -199,7 +200,7 @@ AL_PRIVATE Model::Ptr LoadByAssimp(const String& pathName) {
 
 AL_PRIVATE bool supportedByAssimp(const wchar_t* extName) {
 	static std::unordered_set<String> extNames = {
-		L".dae",L".xml",L".blend",L".bvh",L".3ds",L".ase",
+		L".obj",L".dae",L".xml",L".blend",L".bvh",L".3ds",L".ase",
 		L".glFT",L".ply",L".dxf",L".ifc",L".nff",L".smd",
 		L".vta",L".mdl",L".md2",L".md3",L".pk3",L".mdc",L".md5anim",
 		L".md5camera",L".x",L".q3o",L".q3s",L".raw",L".ac",L".stl",
@@ -214,6 +215,27 @@ AL_PRIVATE bool supportedByAssimp(const wchar_t* extName) {
 	return false;
 }
 
+AL_PRIVATE Model::Ptr LoadMMD(const String& pathName) {
+	FILE* f;
+	if (errno_t error = _wfopen_s(&f, pathName.c_str(), L"rb"); error != 0) {
+		al_log("Model::Load : fail to open file {0} , reason {1}", ConvertToNarrowString(pathName), string(strerror(error)));
+		return nullptr;
+	}
+
+	std::filebuf fb;
+	if (!fb.open(ConvertToNarrowString(pathName), std::ios::in | std::ios::binary)) {
+		al_log("Model::Load : fail to open file {0}", ConvertToNarrowString(pathName));
+		return nullptr;
+	}
+
+	std::istream is(&fb);
+	pmx::PmxModel x;
+	x.Read(&is);
+
+
+
+	return nullptr;
+}
 
 Model::Ptr Model::Load(const String& path) {
 
@@ -222,6 +244,8 @@ Model::Ptr Model::Load(const String& path) {
 	
 	if (supportedByAssimp(extName.c_str())) {
 		return LoadByAssimp(path);
+	}if (extName == AL_STR(".pmx") || extName == AL_STR(".pmd")) {
+		return LoadMMD(path);
 	}
 	else {
 		al_log("Model::Load : file {0} 's extension is not supported", ConvertToNarrowString(path));
@@ -258,7 +282,7 @@ bool TriangleIntersect(const ScenePrimitiveInfo& info, const Ray& r, Intersectio
 	Vector3f interplatedTangent = Math::normalize(Math::interpolate3(v0.tangent, v1.tangent, v2.tangent, isect.localUv));
 	Vector3f bitagent = Math::cross(isect.normal, interplatedTangent);
 	//make sure the tangent is vertical to normal
-	isect.tangent = Math::cross(interplatedTangent, isect.normal);
+	isect.tangent = Math::cross(bitagent, isect.normal);
 	isect.uv = Math::interpolate3(v0.uv, v1.uv, v2.uv, isect.localUv);
 	return true;
 }
@@ -278,11 +302,11 @@ vector<ScenePrimitiveInfo> Model::GenerateScenePrimitiveInfos(
 	al_for(i,0,meshs.size()) {
 		Mesh::Ptr mesh = meshs[i];
 		
-		for (uint32 j = 0; j < mesh->GetVertices().size();j += 3) {
+		for (uint32 j = 0; j < mesh->GetIndices().size();j += 3) {
 			ScenePrimitiveInfo info;
-			uint32 i0 = mesh->GetIndices()[i];
-			uint32 i1 = mesh->GetIndices()[i];
-			uint32 i2 = mesh->GetIndices()[i];
+			uint32 i0 = mesh->GetIndices()[j];
+			uint32 i1 = mesh->GetIndices()[j + 1];
+			uint32 i2 = mesh->GetIndices()[j + 2];
 
 			info.data.triangle.v0 = TransformVertex(mesh->GetVertices()[i0], trans);
 			info.data.triangle.v1 = TransformVertex(mesh->GetVertices()[i1], trans);

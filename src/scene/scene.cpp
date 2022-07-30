@@ -76,10 +76,14 @@ optional<ModelID> Scene::LoadModel(const String& path) {
 		models.push_back(model);
 		return (uint32)(models.size() - 1);
 	}
+	else {
+		modelPaths.pop_back();
+	}
 	return {};
 }
 
-SceneObjectID Scene::CreateSceneObject(Model::Ptr model, const Transform& transform) {
+SceneObjectID Scene::CreateSceneObject(ModelID _model, const Transform& transform) {
+	Model::Ptr model = GetModel(_model);
 	SceneObject::Ptr sobj(al_new(SceneObject, model, transform));
 	sceneObjects.push_back(sobj);
 	//add a new object to the scene.set to build flag to false
@@ -95,7 +99,7 @@ SceneObjectID Scene::CreateSceneObject(ScenePrimitive::Ptr primitive, Material::
 	auto areaLight = mat->GetEmission();
 	if (areaLight.has_value()) {
 		AreaLight::Ptr lightSource = areaLight.value();
-		//TODO : Werid api.May refactor it later
+		//TODO : Werid function call.May refactor it later
 		lightSource->SetTransform(sobj->GetTransform());
 		lightSources.push_back(lightSource);
 	}

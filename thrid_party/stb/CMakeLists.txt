@@ -1,5 +1,3 @@
-project(stb)
-
 file(GLOB STB_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB STB_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp*")
 

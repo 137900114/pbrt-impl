@@ -17,3 +17,50 @@ Integrator::~Integrator() {
 	camera = nullptr;
 	scene = nullptr;
 }
+
+void Integrator::DebugBreakAtPixel(uint32 x, uint32 y) {
+#ifdef DEBUG
+	bx.push_back(x), by.push_back(y);
+#endif
+}
+
+
+void Integrator::CheckDebugBreak(uint32 x,uint32 y) {
+#ifdef DEBUG
+	al_for(i,0,bx.size()) {
+		if (bx[i] == x && by[i] == y) {
+			al_debug_break;
+		}
+	}
+#endif
+}
+
+void NormalIntegrator::Render() {
+	//disable tone mapping
+	camera->SetToneMappingAlgorithm(ClampToneMapping);
+	al_for(x,0,rtHeight) {
+		al_for(y,0,rtWidth) {
+			CheckDebugBreak(x, y);
+
+			Ray r = camera->GenerateRay(0, Vector2f(.5f,.5f), Vector2f(), x, y);
+			Vector3f L;
+			SurfaceIntersection isect;
+			if (scene->Intersect(r,isect)) {
+				if (!shadingNormal)
+					L = isect.isect.normal * .5f + .5f;
+				else
+					L = isect.shadingNormal * .5f + .5f;
+			}
+			camera->WriteFilm(L, x, y);
+		}
+	}
+}
+
+void NormalIntegrator::ShowShadingNormal(bool v) {
+	shadingNormal = v;
+}
+
+void NormalIntegrator::LogStatus() {
+
+}
+

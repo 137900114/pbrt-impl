@@ -35,6 +35,7 @@ void SampledIntegrator::Render() {
 	al_assert(camera != nullptr, "SampledIntegrator::Render : a camera should be attached to integrator before rendering");
 	al_assert(scene != nullptr, "SampledIntegrator::Render : a scene  should be attached to integrator before rendering");
 
+	//most x86 cpu's cache line size is 64 bytes
 	constexpr uint32 tileSize = 16;
 	uint32 xTileCount = (rtWidth + tileSize - 1) / tileSize;
 	uint32 yTileCount = (rtHeight + tileSize - 1) / tileSize;
@@ -90,14 +91,8 @@ void SampledIntegrator::Render() {
 					uint32 x = task.offsetX + xi;
 					uint32 y = task.offsetY + yi;
 
-#ifdef DEBUG
-					al_for(i,0,bx.size()) {
-						if (bx[i] == x && by[i] == y) {
-							__debugbreak();
-						}
-					}
-#endif
-					
+					//for debugging
+					CheckDebugBreak(x, y);
 
 					localSampler->NextPixel(x, y);
 					al_for(s, 0, samplePerPixel) {
@@ -293,8 +288,3 @@ Vector3f SampledIntegrator::SampleDirectLightSource(const SurfaceIntersection& i
 }
 
 
-void SampledIntegrator::DebugBreakAtPixel(uint32 x, uint32 y) {
-#ifdef DEBUG
-	bx.push_back(x), by.push_back(y);
-#endif
-}

@@ -1,6 +1,6 @@
 # Now simply link against gtest or gtest_main as needed. Eg
 
-set(test_cases math_test  multithread_test)
+set(test_cases math_test  multithread_test bvh_test)
 
 foreach(test_case ${test_cases})
   message("adding test case ${test_case}...")

@@ -123,7 +123,15 @@ AL_PRIVATE uint32 BuildNode(vector<BVHLeafNode>& buildNodes,
     }
 }
 
-
+uint32 treeDepth(uint32 i, vector<BVHLeafNode>& leafNodes) {
+    if (leafNodes[i].isLeaf) {
+        return 1;
+    }
+    else {
+        return max(treeDepth(leafNodes[i].lchild, leafNodes),
+            treeDepth(leafNodes[i].rchild, leafNodes)) + 1;
+    }
+}
 
 //generate lbvh
 //sort primitives by morton code
@@ -168,6 +176,8 @@ void BVHTree::Build(const vector<BVHPrimitive>& _primitives,BVHPrimitiveIntersec
         primitives, firstBitIndex);
 
     this->intersector = intersector;
+
+    al_log("the depth of bvh is {}", treeDepth(0,buildNodes));
 }
 
 //stakless tranverse
@@ -187,7 +197,7 @@ bool BVHTree::Intersect(const Ray& r,BVHIntersectInfo& info) {
                         Intersection isect;
                         intersected |= intersector->Intersect(r, primInfo.primitiveIndex + i, isect);
                         if (intersected && isect.t < info.intersection.t) {
-                            info.primitiveIndex = node.primitiveIndex;
+                            info.primitiveIndex = primInfo.primitiveIndex;
                             info.intersection = isect;
                         }
                     }

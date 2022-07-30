@@ -46,7 +46,7 @@ public:
 	SceneObject::Ptr	GetSceneObject(SceneObjectID i);
 
 	optional<ModelID>	LoadModel(const String& path);
-	SceneObjectID		CreateSceneObject(Model::Ptr model,const Transform& transform);
+	SceneObjectID		CreateSceneObject(ModelID model,const Transform& transform);
 	SceneObjectID		CreateSceneObject(ScenePrimitive::Ptr primitive, Material::Ptr mat,
 		const Transform& transform);
 

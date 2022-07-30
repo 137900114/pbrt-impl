@@ -416,6 +416,22 @@ Vector2f operator+(const Vector2f& a, const Vector2f& b);
 Vector3f operator+(const Vector3f& a, const Vector3f& b);
 Vector4f operator+(const Vector4f& a, const Vector4f& b);
 
+Vector2f operator+(const Vector2f& a, float b);
+Vector3f operator+(const Vector3f& a, float b);
+Vector4f operator+(const Vector4f& a, float b);
+
+Vector2f operator+(float b, const Vector2f& a);
+Vector3f operator+(float b, const Vector3f& a);
+Vector4f operator+(float b, const Vector4f& a);
+
+Vector2f operator-(const Vector2f& a, float b);
+Vector3f operator-(const Vector3f& a, float b);
+Vector4f operator-(const Vector4f& a, float b);
+
+Vector2f operator-(float b, const Vector2f& a);
+Vector3f operator-(float b, const Vector3f& a);
+Vector4f operator-(float b, const Vector4f& a);
+
 Vector2f operator*(const Vector2f& a, const Vector2f& b);
 Vector3f operator*(const Vector3f& a, const Vector3f& b);
 Vector4f operator*(const Vector4f& a, const Vector4f& b);

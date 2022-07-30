@@ -85,11 +85,23 @@ TEST(VectorTest,VectorTest) {
 	OP2(Vector2f(1.f, 2.f),+, Vector2f(3.f, 4.f),Vector2f(4.f, 6.f));
 	OP2(Vector3f(1.f, 2.f, 3.f), + ,Vector3f(4.f, 5.f, 6.f),Vector3f(5.f, 7.f, 9.f));
 	OP2(Vector4f(1.f, 2.f, 3.f, 4.f),+, Vector4f(5.f, 6.f, 7.f, 8.f), Vector4f(6.f, 8.f, 10.f, 12.f));
+	OP2(Vector2f(1.f, 2.f), +, 1.f, Vector2f(2.f, 3.f));
+	OP2(Vector3f(1.f, 2.f, 3.f), +, 1.f, Vector3f(2.f, 3.f, 4.f));
+	OP2(Vector4f(1.f, 2.f, 3.f, 4.f), +, 1.f, Vector4f(2.f, 3.f, 4.f, 5.f));
+	OP2(1.f, +, Vector2f(1.f, 2.f), Vector2f(2.f, 3.f));
+	OP2(1.f, +, Vector3f(1.f, 2.f, 3.f), Vector3f(2.f, 3.f, 4.f));
+	OP2(1.f, +, Vector4f(1.f, 2.f, 3.f, 4.f), Vector4f(2.f, 3.f, 4.f, 5.f));
 
 	//subtract operator
 	OP2(Vector2f(1.f, 2.f), -,Vector2f(3.f, 4.f), Vector2f(-2.f, -2.f));
 	OP2(Vector3f(1.f, 2.f, 3.f) ,-, Vector3f(4.f, 5.f, 6.f), Vector3f(-3.f, -3.f, -3.f));
 	OP2(Vector4f(1.f, 2.f, 3.f, 4.f) ,- ,Vector4f(5.f, 6.f, 7.f, 8.f), Vector4f(-4.f, -4.f, -4.f, -4.f));
+	OP2(Vector2f(1.f, 2.f), -, 1.f, Vector2f(0.f, 1.f));
+	OP2(Vector3f(1.f, 2.f, 3.f), -, 1.f, Vector3f(0.f, 1.f, 2.f));
+	OP2(Vector4f(1.f, 2.f, 3.f, 4.f), -, 1.f, Vector4f(0.f, 1.f, 2.f, 3.f));
+	OP2(1.f, -, Vector2f(1.f, 2.f), Vector2f(0.f, -1.f));
+	OP2(1.f, -, Vector3f(1.f, 2.f, 3.f), Vector3f(0.f, -1.f, -2.f));
+	OP2(1.f, -, Vector4f(1.f, 2.f, 3.f, 4.f), Vector4f(0.f, -1.f, -2.f, -3.f));
 
 	//multiply operator
 	OP2(Vector2f(1.f, 2.f) ,*, Vector2f(3.f, 4.f), Vector2f(3.f, 8.f));
@@ -353,8 +365,8 @@ TEST(SphereIntersectionTest, IntersectionTest) {
 	info.data.sphere.trans = Transform(Vector3f(0, 0, z), Quaternion(), Vector3f::I);
 
 	uint32 cx = 1000, cy = 1000;
-	al_for(x, 500, cx) {
-		al_for(y, 500, cy) {
+	al_for(x, 0, cx) {
+		al_for(y, 0, cy) {
 			float px = (max_x - min_x) * ((float)x / (float)cx - .5f);
 			float py = (max_y - min_y) * ((float)y / (float)cy - .5f);
 			Vector3f p(px, py, z);
@@ -371,8 +383,8 @@ TEST(SphereIntersectionTest, IntersectionTest) {
 	}
 	
 	info.data.sphere.trans = Transform(Vector3f(0, sinf(Math::pi / 3.f) * z, cosf(Math::pi / 3.f) * z), Quaternion(), Vector3f::I);
-	al_for(x, 500, cx) {
-		al_for(y, 500, cy) {
+	al_for(x, 0, cx) {
+		al_for(y, 0, cy) {
 			float px = (max_x - min_x) * ((float)x / (float)cx - .5f);
 			float py = (max_y - min_y) * ((float)y / (float)cy - .5f);
 			Vector3f p(px, py, z);
@@ -389,6 +401,44 @@ TEST(SphereIntersectionTest, IntersectionTest) {
 	}
 }
 
+
+TEST(TriangleIntersectionTest, IntersectionTest) {
+	float max_x = 1.f, min_x = -1.f, max_y = 1.f, min_y = -1.f, z = 2.f;
+
+	Vector3f v0, v1, v2;
+	v0 = Vector3f(max_x, max_y, z);
+	v1 = Vector3f(min_x, max_y, z);
+	v2 = Vector3f(min_x, min_y, z);
+	float t;
+	Vector2f uv;
+	Vector3f position;
+
+	Intersection isect;
+	EXPECT_FALSE(Math::ray_intersect(v0, v1, v2, Ray(Vector3f(), Vector3f::Right), &t, &uv, &position));
+	EXPECT_FALSE(Math::ray_intersect(v0, v1, v2, Ray(Vector3f(), Vector3f::Up), &t, &uv, &position));
+	uint32 cx = 1000, cy = 1000;
+	al_for(x,0,cx) {
+		al_for(y,0,cy) {
+			float px = (max_x - min_x) * ((float)x / (float)cx - .5f) * 4.f;
+			float py = (max_y - min_y) * ((float)y / (float)cy - .5f) * 4.f;
+			Vector3f p(px, py, z);
+			Vector2f expectUv = Vector2f((max_y - py) / (max_y - min_y),(px - min_x) / (max_x - min_x));
+			Ray r(Vector3f(), Math::normalize(p));
+			if (al_fequal(px, min_x) || al_fequal(py, max_y)) break;
+			if (x > y || px < min_x || px > max_x || py < min_y || py > max_y) {
+				EXPECT_FALSE(Math::ray_intersect(v1, v2, v0, r, &t, &uv, &position)) << "triangle intersection fails at " << x << "," << y << "," << px << "," << py;
+			}
+			else if(x < y) {
+				EXPECT_TRUE(Math::ray_intersect(v1, v2, v0, r, &t, &uv, &position)) << "triangle intersection fails at " << x << "," << y << "," << px << "," << py;
+				EXPECT_TRUE(position == p) << "triangle intersection fails at " << x << "," << y << ","  << " intersection position should be " << p  << " rather than " << position;
+				EXPECT_TRUE(uv == expectUv) << "triangle intersection fails at " << x << "," << y << "," << " uv at intersection point should be " << expectUv << " rather than " << uv;
+			}
+		}
+	}
+
+
+
+}
 
 int main() {
 	testing::InitGoogleTest();
