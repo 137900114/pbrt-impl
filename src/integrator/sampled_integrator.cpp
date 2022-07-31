@@ -69,6 +69,9 @@ void SampledIntegrator::Render() {
 	uint32 uvSampleIndex = sampler->GetSampleIndex("uv").value();
 	uint32 lenSampleIndex = sampler->GetSampleIndex("len").value();
 
+	uint32 totalTaskCount = taskQueue.size();
+
+
 	dispatcher->Dispatch([&](uint32 threadId) {
 		Sampler::Ptr localSampler;
 		//main thread
@@ -80,6 +83,10 @@ void SampledIntegrator::Render() {
 		}
 
 		while (true) {
+			if (threadId == 0) {
+				al_log("remaining tasks/total task : {} / {}", taskQueue.size(), totalTaskCount);
+			}
+
 			optional<Tile> res = taskQueue.try_pop();
 			if (!res.has_value()) {
 				break;
@@ -93,6 +100,8 @@ void SampledIntegrator::Render() {
 
 					//for debugging
 					CheckDebugBreak(x, y);
+
+					
 
 					localSampler->NextPixel(x, y);
 					al_for(s, 0, samplePerPixel) {
@@ -125,9 +134,12 @@ void SampledIntegrator::Render() {
 							L = Math::vmax(L, Vector3f());
 						}
 						
+					
 
 						camera->WriteFilm(L, x, y);
 					}
+
+					
 				}
 			}
 		}
@@ -252,13 +264,13 @@ Vector3f SampledIntegrator::SampleDirectLightSource(const SurfaceIntersection& i
 			if (lightSourceCount == 0) return Vector3f();
 			
 			SamplerStream& stream = sampler->GetSamplerStream();
-			/*
+			
 			float sLight = stream.Sample1D() * (float)lightSourceCount;
 			uint32 iLight = std::min((uint32)sLight, lightSourceCount - 1);
 			
 			Light::Ptr light = scene->GetLightSource(iLight);
-			*/
-			Light::Ptr light = scene->PickOneFiniteLightSources(stream.Sample1D());
+			
+			//Light::Ptr light = scene->PickOneFiniteLightSources(stream.Sample1D());
 			//divide the pdf of the light sample
 			Vector3f L;
 			//light sources doesn't sample it self

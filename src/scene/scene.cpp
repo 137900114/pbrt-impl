@@ -6,6 +6,8 @@
 bool SceneIntersector::Intersect(const Ray& r, uint32 primitiveIndex,Intersection& isect) {
 	const ScenePrimitiveInfo& primitive = scenePrimitives[primitiveIndex];
 	if (primitive.intersector(primitive,r,isect)) {
+		//push the position a little forward
+		isect.adjustedPosition = isect.position + isect.normal * .0005f;
 		return true;
 	}
 	return false;
@@ -160,6 +162,7 @@ bool Scene::Intersect(const Ray& r) {
 }
 
 Light::Ptr Scene::PickOneFiniteLightSources(float seed) {
+	if (finiteLightSources.size() == 0) return nullptr;
 	uint32 i = min((uint32)(seed * finiteLightSources.size()), 
 		(uint32)finiteLightSources.size() - 1);
 	return finiteLightSources[i];

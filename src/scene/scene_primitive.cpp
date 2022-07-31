@@ -127,3 +127,11 @@ void ScenePrimitiveInfo::Clone(const ScenePrimitiveInfo& info) {
 	type = info.type;
 	memcpy(&data, &info.data, sizeof(data));
 }
+
+Vector3f GenerateTangent(const Vector3f& normal) {
+	Vector3f t = Math::cross(normal, Vector3f::Up);
+	if (Math::zero(t)) {
+		t = Math::cross(normal, Vector3f::Right);
+	}
+	return Math::normalize(t);
+}

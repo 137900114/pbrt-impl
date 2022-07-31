@@ -16,7 +16,6 @@ public:
 	virtual void Render() = 0;
 	virtual void LogStatus() = 0;
 	
-
 	void DebugBreakAtPixel(uint32 x,uint32 y);
 	virtual ~Integrator();
 protected:
@@ -34,12 +33,14 @@ protected:
 //for debug
 class NormalIntegrator : public Integrator {
 public:
+	al_add_ptr_t(NormalIntegrator);
 	NormalIntegrator() {}
 	virtual void Render() override;
 	virtual void LogStatus() override;
 
+	void ShowTangent(bool v = true);
 	void ShowShadingNormal(bool v = true);
-
 private:
 	bool shadingNormal = false;
+	bool showTangent = false;
 };

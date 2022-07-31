@@ -17,6 +17,15 @@ struct Vertex {
 	Vector2f uv;
 };
 
+/// <summary>
+/// generate a random tangent
+/// this function should not be used in model with normal map
+/// </summary>
+/// <param name="N">the normal</param>
+/// <returns>generated tangent</returns>
+Vector3f GenerateTangent(const Vector3f& N);
+
+
 struct ScenePrimitiveInfo {
 	SCENE_PRIMITIVE_TYPE type;
 	Bound3f bound;

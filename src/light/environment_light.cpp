@@ -10,15 +10,17 @@ Vector3f ConstantEnvironmentLight::SampleIntensity(const Intersection& isect, co
 	float sqrtOneMinusZeta1 = Math::safeSqrtOneMinusSq(seed.x);
 	
 	//see note 13.2
-	float z = seed.x;
-	float y = sinf(seed.y * 2.f * Math::pi) * sqrtOneMinusZeta1;
-	float x = cosf(seed.x * 2.f * Math::pi) * sqrtOneMinusZeta1;
+	float y = seed.x;
+	float z = sinf(seed.y * 2.f * Math::pi) * sqrtOneMinusZeta1;
+	float x = cosf(seed.y * 2.f * Math::pi) * sqrtOneMinusZeta1;
 
 	Vector3f bitangent = Math::cross(isect.normal, isect.tangent);
 	
 	//TODO:encapsulate this to a function
 	*wi = isect.normal * y + isect.tangent * x + bitangent * z;
 	*pdf = 1.f / (2.f * Math::pi);
+
+	*tester = VisiblityTester(isect.adjustedPosition, *wi, infinity);
 	return intensity;
 }
 

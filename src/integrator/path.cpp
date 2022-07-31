@@ -43,11 +43,8 @@ Vector3f PathIntegrator::Li(Ray _r, Scene::Ptr scene,Sampler::Ptr sampler) {
 		Material::Ptr mat = isect.material;
 		float scatterPdf;
 		Vector3f wi = mat->SampleBSDF(isect, stream.Sample2D(), r.d, &scatterPdf);
-
-		//push the new ray's origin point a little further
-		Vector3f o = isect.isect.position + isect.isect.normal * Math::eta;
 		
-		Ray newRay = Ray(o, wi);
+		Ray newRay = Ray(isect.isect.adjustedPosition, wi);
 
 		Vector3f f = mat->EvaluateBSDF(r.d, isect, newRay.d);
 		pathAttenuation = pathAttenuation * f * std::abs(Math::dot(wi, isect.shadingNormal)) / scatterPdf;

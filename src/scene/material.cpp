@@ -2,11 +2,11 @@
 
 
 Material::Material(BSDF::Ptr bsdf, shared_ptr<AreaLight> emission,
-	uint32 textureCount, Texture::Ptr* texture, TEXTURE_TYPE* types):
+	uint32 textureCount,MaterialTextureTable* table):
 	bsdf(bsdf),emission(emission) {
 	for (uint32 i = 0; i < textureCount; i++) {
-		al_assert(types[i] < TEXTURE_TYPE_NUM, "Material::GetTexture : invalid texture type.out of bondary");
-		textures[types[i]] = texture[i];
+		al_assert(table[i].type < TEXTURE_TYPE_NUM, "Material::GetTexture : invalid texture type.out of bondary");
+		textures[table[i].type] = table[i].texture;
 	}
 	al_assert(bsdf != nullptr, "a material's bsdf should not be nullptr");
 }
@@ -32,6 +32,8 @@ SurfaceIntersection Material::Intersect(const Intersection& isect, Material::Ptr
 	else {
 		sIsect.shadingNormal = isect.normal;
 	}
+
+
 	return sIsect;
 }
 

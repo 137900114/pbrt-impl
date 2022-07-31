@@ -46,10 +46,13 @@ void NormalIntegrator::Render() {
 			Vector3f L;
 			SurfaceIntersection isect;
 			if (scene->Intersect(r,isect)) {
-				if (!shadingNormal)
-					L = isect.isect.normal * .5f + .5f;
-				else
+				if (shadingNormal)
 					L = isect.shadingNormal * .5f + .5f;
+				else if (showTangent)
+					L = isect.isect.tangent;
+				else
+					L = isect.isect.normal * .5f + .5f;
+
 			}
 			camera->WriteFilm(L, x, y);
 		}
@@ -57,7 +60,21 @@ void NormalIntegrator::Render() {
 }
 
 void NormalIntegrator::ShowShadingNormal(bool v) {
-	shadingNormal = v;
+	if (!v) {
+		shadingNormal = false, showTangent = false;
+	}
+	else {
+		shadingNormal = true, showTangent = false;
+	}
+}
+
+void NormalIntegrator::ShowTangent(bool v) {
+	if (!v) {
+		shadingNormal = false, showTangent = false;
+	}
+	else {
+		showTangent = true; shadingNormal = false;
+	}
 }
 
 void NormalIntegrator::LogStatus() {

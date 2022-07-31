@@ -276,41 +276,7 @@ namespace Math {
 
     bool   ray_intersect(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Ray& r,
         param_out float* t, param_out Vector2f* uv, param_out Vector3f* position) {
-        
-        /*
-        Vector3f e1 = v1 -  v0;
-        Vector3f e2 = v2 -  v0;
-        // no need to normalize
-        Vector3f N = cross(e1, e2);//N 
-        float area2 = length(N);
-
-        // Step 1: finding P
-
-        // check if ray and plane are parallel ?
-        float NdotRayDirection = dot(N, r.d);
-        if (al_fequal(NdotRayDirection,0.f))  //almost 0 
-            return false;  //they are parallel so they don't intersect ! 
-
-        // compute t (equation 3)
-        *t = - (dot(N, r.o - v0)) / NdotRayDirection;
-
-        // check if the triangle is in behind the ray
-        if (*t < 0) return false;  //the triangle is behind 
-
-        // compute the intersection point using equation 1
-        Vector3f P = (r.d * *t) + r.o;
-
-        float area = dot(N, N);
-
-        Vector3f Po = P - v0;
-        float uarea = dot(cross(e1, Po), N);
-        float varea = dot(cross(e2, Po), N);
-        
-        if (uarea < 0 || varea < 0 || (uarea + varea) > 1.f) return false;
-        *uv = Vector2f(uarea / area, varea / area);*/
-
-        // [-D ]
-
+       
         //from paper https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
         Vector3f e1 = v1 - v0;
         Vector3f e2 = v2 - v0;
@@ -335,7 +301,7 @@ namespace Math {
         *uv = Vector2f(u, v);
         *position = *t * r.d + r.o;
 
-        return true;  //this ray hits the triangle 
+        return *t > 0.f;  //this ray hits the triangle 
     }
 
 

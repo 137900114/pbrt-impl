@@ -10,7 +10,6 @@ RTTI_STRUCT(CameraSample)
 RTTI_STRUCT_END
 
 
-//TODO add anit aliase
 class Camera {
 public:
 	al_add_ptr_t(Camera);

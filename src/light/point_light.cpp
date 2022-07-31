@@ -6,7 +6,7 @@ PointLight::PointLight(Vector3f position,const Vector3f& intensity) :
 {}
 
 Vector3f PointLight::DeltaIntensity(const Intersection& isect, Vector3f* wi, VisiblityTester* tester) {
-	*tester = VisiblityTester(isect.position,position);
+	*tester = VisiblityTester(isect.adjustedPosition,position);
 
 	Vector3f dis = isect.position - position;
 	float len = Math::length(dis);

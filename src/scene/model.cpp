@@ -119,16 +119,14 @@ AL_PRIVATE Model::Ptr LoadByAssimp(const String& pathName) {
 
 	unordered_map<String, uint32>  texturePathMap;
 
-	String dirName = ConvertFromWideString(fs::path(pathName).parent_path().wstring());
+	fs::path dirName = fs::path(pathName).parent_path();
 	
 	for (size_t i = 0; i != scene->mNumMaterials; i++) {
 
 		aiMaterial* mat = scene->mMaterials[i];
 		BSDF::Ptr  bsdf(new LambertBSDF(Vector3f(1.f, 1.f, 1.f)));
 
-		vector<TEXTURE_TYPE> materialTextureType;
-		vector<Texture::Ptr> materialTexture;
-		
+		vector<MaterialTextureTable> table;
 		auto loadTexture = [&](aiTextureType type)-> optional<uint32> {
 			if (mat->GetTextureCount(type) != 0) {
 				aiString str;
@@ -140,7 +138,7 @@ AL_PRIVATE Model::Ptr LoadByAssimp(const String& pathName) {
 				}
 				//if it's not a absolute path
 				if (fs::path(texPath).is_relative()) {
-					texPath = dirName + texPath;
+					texPath = dirName / texPath;
 				}
 				Texture::Ptr tex = Texture::Load(texPath);
 				if (tex == nullptr) {
@@ -161,8 +159,8 @@ AL_PRIVATE Model::Ptr LoadByAssimp(const String& pathName) {
 		al_for(i, 0, TEXTURE_TYPE_NUM) {
 			auto v = loadTexture((aiTextureType)i);
 			if (v.has_value()) {
-				materialTextureType.push_back((TEXTURE_TYPE)i);
-				materialTexture.push_back(textures[v.value()]);
+				table.push_back(MaterialTextureTable{(TEXTURE_TYPE)i,
+					textures[v.value()]});
 			}
 		}
 
@@ -183,9 +181,9 @@ AL_PRIVATE Model::Ptr LoadByAssimp(const String& pathName) {
 				bsdf->SetParameterByName("metallic", *(float*)data);
 			}
 		}
-		
-		Material::Ptr material(new Material(bsdf,nullptr,materialTexture.size(),
-			materialTexture.data(), materialTextureType.data()));
+
+		Material::Ptr material(new Material(bsdf, nullptr,
+			table.size(), table.data()));
 
 		materials.push_back(material);
 	}
@@ -221,20 +219,76 @@ AL_PRIVATE Model::Ptr LoadMMD(const String& pathName) {
 		al_log("Model::Load : fail to open file {0} , reason {1}", ConvertToNarrowString(pathName), string(strerror(error)));
 		return nullptr;
 	}
-
-	std::filebuf fb;
-	if (!fb.open(ConvertToNarrowString(pathName), std::ios::in | std::ios::binary)) {
-		al_log("Model::Load : fail to open file {0}", ConvertToNarrowString(pathName));
-		return nullptr;
-	}
+	std::filebuf fb(f);
 
 	std::istream is(&fb);
 	pmx::PmxModel x;
 	x.Read(&is);
+	//TODO : generate tangent data from normals reference http://www.thetenthplanet.de/archives/1180
+	
+	vector<Mesh::Ptr> 	 meshs;
+	vector<uint32>		 meshMaterialIndices;
+	vector<Material::Ptr>  	 materials;
+	vector<Texture::Ptr> textures;
+	fs::path dirName = fs::path(pathName).parent_path();
+	//load textures,TODO : currently we ignore the toon textures
+	al_for(i, 0, x.texture_count) {
+		fs::path path = dirName / x.textures[i];
+		Texture::Ptr tex = Texture::Load(ConvertFromWideString(path.wstring()));
+		//TODO : rearrange the texture's index rather than throw a assert
+		al_assert(tex != nullptr, "Model::Load : fail to load {} texture for model", ConvertToNarrowString(path));
+		textures.push_back(tex);
+	}
 
+	//mmd models are material driven rendering
+	uint32 indexOffset = 0;
+	al_for(i, 0, x.material_count) {
+		pmx::PmxMaterial& mat = x.materials[i];
+		if (mat.index_count <= 0) continue;
 
+		//TODO toon bsdfs
+		BSDF::Ptr bsdf(new LambertBSDF());
 
-	return nullptr;
+		//we only need the first 3 components
+		bsdf->SetParameterByName("diffuse", Vector3f(mat.diffuse));
+		
+		vector<Vertex> vertices;
+		vector<uint32> indices;
+		uint32 vmin = x.indices[indexOffset], vmax = x.indices[indexOffset];
+		al_for(i, 0, mat.index_count) {
+			vmin = std::min((uint32)x.indices[i], vmin);
+			vmax = std::max((uint32)x.indices[i], vmax);
+		}
+		vertices.resize(vmax - vmin + 1), indices.resize(mat.index_count);
+		al_for(i, 0, vertices.size()) {
+			Vertex& vert = vertices[i];
+			pmx::PmxVertex& pmxVert = x.vertices[vmin + i];
+			vert.position = pmxVert.positon;
+			vert.normal = pmxVert.normal;
+			vert.uv = pmxVert.uv;
+		}
+		al_for(i, 0, mat.index_count) {
+			indices[i] = x.indices[indexOffset + i] - vmin;
+		}
+
+		Mesh::Ptr mesh(new Mesh(vertices, indices));
+		MaterialTextureTable texTable[] =
+		{
+			{TEXTURE_TYPE_DIFFUSE,textures[mat.diffuse_texture_index]}
+		};
+		Material::Ptr material(new Material(bsdf, nullptr, al_countof(texTable), texTable));
+		materials.push_back(material);
+		meshs.push_back(mesh);
+		meshMaterialIndices.push_back(i);
+		
+		//delete
+		al_log("material diffuse texture {},surface count {},vmin {},vmax {}",
+			mat.diffuse_texture_index,mat.index_count,vmin,vmax);
+	}
+
+	Model::Ptr model(new Model(meshs, meshMaterialIndices,
+		materials, textures, {}));
+	return model;
 }
 
 Model::Ptr Model::Load(const String& path) {
@@ -254,9 +308,7 @@ Model::Ptr Model::Load(const String& path) {
 }
 
 Mesh::Mesh(const vector<Vertex>& vertices,
-	const  vector<uint32>& indices):vertices(vertices),indices(indices){
-
-}
+	const  vector<uint32>& indices):vertices(vertices),indices(indices){}
 
 Model::Model(const vector<Mesh::Ptr>& meshs,
 	const vector<uint32>& meshMaterialIndices,
@@ -279,10 +331,17 @@ bool TriangleIntersect(const ScenePrimitiveInfo& info, const Ray& r, Intersectio
 	}
 
 	isect.normal = Math::normalize(Math::interpolate3(v0.normal, v1.normal, v2.normal, isect.localUv));
-	Vector3f interplatedTangent = Math::normalize(Math::interpolate3(v0.tangent, v1.tangent, v2.tangent, isect.localUv));
-	Vector3f bitagent = Math::cross(isect.normal, interplatedTangent);
-	//make sure the tangent is vertical to normal
-	isect.tangent = Math::cross(bitagent, isect.normal);
+	//no vertex contains tangent information
+	if (!Math::zero(v0.tangent)) {
+		Vector3f interplatedTangent = Math::normalize(Math::interpolate3(v0.tangent, v1.tangent, v2.tangent, isect.localUv));
+		Vector3f bitagent = Math::cross(isect.normal, interplatedTangent);
+		//make sure the tangent is vertical to normal
+		isect.tangent = Math::cross(bitagent, isect.normal);
+	}
+	//generate a tangent for the triangle
+	else {
+		isect.tangent = GenerateTangent(isect.normal);
+	}
 	isect.uv = Math::interpolate3(v0.uv, v1.uv, v2.uv, isect.localUv);
 	return true;
 }
@@ -301,6 +360,7 @@ vector<ScenePrimitiveInfo> Model::GenerateScenePrimitiveInfos(
 	vector<ScenePrimitiveInfo> primitiveInfos;
 	al_for(i,0,meshs.size()) {
 		Mesh::Ptr mesh = meshs[i];
+		
 		
 		for (uint32 j = 0; j < mesh->GetIndices().size();j += 3) {
 			ScenePrimitiveInfo info;

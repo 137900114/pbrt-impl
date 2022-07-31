@@ -360,7 +360,7 @@ TEST(SphereIntersectionTest, IntersectionTest) {
 	ScenePrimitiveInfo info;
 	info.type = SCENE_PRIMITIVE_TYPE_SPHERE;
 	info.intersector = SphereIntersect;
-	info.material = make_shared<Material>(make_shared<LambertBSDF>(), nullptr, 0, nullptr, nullptr);
+	info.material = make_shared<Material>(make_shared<LambertBSDF>(), nullptr, 0, nullptr);
 	info.data.sphere.radius = 1;
 	info.data.sphere.trans = Transform(Vector3f(0, 0, z), Quaternion(), Vector3f::I);
 
@@ -421,9 +421,10 @@ TEST(TriangleIntersectionTest, IntersectionTest) {
 		al_for(y,0,cy) {
 			float px = (max_x - min_x) * ((float)x / (float)cx - .5f) * 4.f;
 			float py = (max_y - min_y) * ((float)y / (float)cy - .5f) * 4.f;
-			Vector3f p(px, py, z);
+			Vector3f p(px, py, z), p2(px, py, -z);
 			Vector2f expectUv = Vector2f((max_y - py) / (max_y - min_y),(px - min_x) / (max_x - min_x));
 			Ray r(Vector3f(), Math::normalize(p));
+			Ray r2(Vector3f(), Math::normalize(p2));
 			if (al_fequal(px, min_x) || al_fequal(py, max_y)) break;
 			if (x > y || px < min_x || px > max_x || py < min_y || py > max_y) {
 				EXPECT_FALSE(Math::ray_intersect(v1, v2, v0, r, &t, &uv, &position)) << "triangle intersection fails at " << x << "," << y << "," << px << "," << py;
@@ -433,6 +434,7 @@ TEST(TriangleIntersectionTest, IntersectionTest) {
 				EXPECT_TRUE(position == p) << "triangle intersection fails at " << x << "," << y << ","  << " intersection position should be " << p  << " rather than " << position;
 				EXPECT_TRUE(uv == expectUv) << "triangle intersection fails at " << x << "," << y << "," << " uv at intersection point should be " << expectUv << " rather than " << uv;
 			}
+			EXPECT_FALSE(Math::ray_intersect(v1, v2, v0, r2, &t, &uv, &position)) << "triangle should never be intersected at this case" << "(x,y) : " << "("  << x << "," << y << ")" << " t:" << t;
 		}
 	}
 

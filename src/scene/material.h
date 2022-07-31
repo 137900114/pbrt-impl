@@ -129,13 +129,18 @@ private:
 	void* data;
 };
 
+struct MaterialTextureTable {
+	TEXTURE_TYPE type;
+	Texture::Ptr texture;
+};
+
 
 class Material {
 public:
 	al_add_ptr_t(Material);
 	
 	Material(BSDF::Ptr bsdf,shared_ptr<AreaLight> emission,
-		uint32 textureCount,Texture::Ptr* texture,TEXTURE_TYPE* types);
+		uint32 textureCount,MaterialTextureTable* table);
 	
 	optional<shared_ptr<AreaLight>> GetEmission();
 	optional<Texture::Ptr>          GetTexture(TEXTURE_TYPE type);

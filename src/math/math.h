@@ -264,6 +264,9 @@ struct Intersection {
     Vector3f position;
     Vector3f normal;
     Vector3f tangent;
+    //position push a little forward out of the intersection point
+    //this is used for ray casting to prevent self intersection
+    Vector3f      adjustedPosition;
 };
 
 
