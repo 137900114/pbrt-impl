@@ -58,7 +58,7 @@ inline shared_ptr<spdlog::logger> _al_logger;
 
 #define al_log_finalize()   _al_logger = nullptr;
 
-#define al_log(...) _al_logger->info(__VA_ARGS__)
+#define al_log(msg,...) _al_logger->info(msg,__VA_ARGS__)
 #define al_warn(...) _al_logger->warn(__VA_ARGS__)
 #define al_assert(expr,...) if(!(expr)) {_al_logger->error(__VA_ARGS__);al_debug_break;exit(-1);}
 

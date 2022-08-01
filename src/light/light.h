@@ -20,24 +20,12 @@ class Scene;
 struct VisiblityTester {
 	bool Visible(shared_ptr<Scene> scene);
 	
-	VisiblityTester():distance(0) {}
+	VisiblityTester() {}
+	VisiblityTester(const VisiblityTester& vt);
+	VisiblityTester(const Vector3f& p0, const Vector3f& p1);
+	VisiblityTester(const Vector3f& p0, const Vector3f& dir, float distance);
 	
-	VisiblityTester(const VisiblityTester& vt):p0(vt.p0),
-	dir(vt.dir),distance(vt.distance) {}
-	
-	VisiblityTester(const Vector3f& p0, const Vector3f& p1):
-		p0(p0), dir(Math::normalize(p1 - p0)) {
-		distance = Math::length(p0 - p1);
-	}
-	
-	VisiblityTester(const Vector3f& p0,const Vector3f& dir,float distance):
-		p0(p0),dir(dir),distance(distance) {}
-	
-	const VisiblityTester& operator=(const VisiblityTester& other) {
-		p0 = other.p0, dir = other.dir;
-		distance = other.distance;
-		return *this;
-	}
+	const VisiblityTester& operator=(const VisiblityTester& other);
 private:
 	Vector3f p0, dir;
 	float distance;

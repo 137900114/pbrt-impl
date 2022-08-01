@@ -2,7 +2,6 @@
 #include "math/math.h"
 #include "light/area_light.h"
 
-//TODO : support primitive insection
 bool SceneIntersector::Intersect(const Ray& r, uint32 primitiveIndex,Intersection& isect) {
 	const ScenePrimitiveInfo& primitive = scenePrimitives[primitiveIndex];
 	if (primitive.intersector(primitive,r,isect)) {

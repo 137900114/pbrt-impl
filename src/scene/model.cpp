@@ -256,8 +256,8 @@ AL_PRIVATE Model::Ptr LoadMMD(const String& pathName) {
 		vector<uint32> indices;
 		uint32 vmin = x.indices[indexOffset], vmax = x.indices[indexOffset];
 		al_for(i, 0, mat.index_count) {
-			vmin = std::min((uint32)x.indices[i], vmin);
-			vmax = std::max((uint32)x.indices[i], vmax);
+			vmin = std::min((uint32)x.indices[i + indexOffset], vmin);
+			vmax = std::max((uint32)x.indices[i + indexOffset], vmax);
 		}
 		vertices.resize(vmax - vmin + 1), indices.resize(mat.index_count);
 		al_for(i, 0, vertices.size()) {
@@ -270,6 +270,7 @@ AL_PRIVATE Model::Ptr LoadMMD(const String& pathName) {
 		al_for(i, 0, mat.index_count) {
 			indices[i] = x.indices[indexOffset + i] - vmin;
 		}
+		indexOffset += mat.index_count;
 
 		Mesh::Ptr mesh(new Mesh(vertices, indices));
 		MaterialTextureTable texTable[] =
@@ -280,10 +281,6 @@ AL_PRIVATE Model::Ptr LoadMMD(const String& pathName) {
 		materials.push_back(material);
 		meshs.push_back(mesh);
 		meshMaterialIndices.push_back(i);
-		
-		//delete
-		al_log("material diffuse texture {},surface count {},vmin {},vmax {}",
-			mat.diffuse_texture_index,mat.index_count,vmin,vmax);
 	}
 
 	Model::Ptr model(new Model(meshs, meshMaterialIndices,
@@ -360,9 +357,8 @@ vector<ScenePrimitiveInfo> Model::GenerateScenePrimitiveInfos(
 	vector<ScenePrimitiveInfo> primitiveInfos;
 	al_for(i,0,meshs.size()) {
 		Mesh::Ptr mesh = meshs[i];
-		
-		
 		for (uint32 j = 0; j < mesh->GetIndices().size();j += 3) {
+			//delete end
 			ScenePrimitiveInfo info;
 			uint32 i0 = mesh->GetIndices()[j];
 			uint32 i1 = mesh->GetIndices()[j + 1];

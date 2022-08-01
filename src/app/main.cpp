@@ -30,16 +30,16 @@ int main(){
 		return 0;
 	}
 
-	ConstantEnvironmentLight::Ptr env(new ConstantEnvironmentLight(Vector3f::I));
+	ConstantEnvironmentLight::Ptr env(new ConstantEnvironmentLight(Vector3f::I * 1.5f));
 
 	Material::Ptr emission_mat(new Material(bsdf, light, 0, nullptr));
 	Material::Ptr diffuse_mat(new Material(bsdf2, nullptr, 0, nullptr));
 	
 	Transform trans1(Vector3f(0.f, -.875f, 7.f), Quaternion(Vector3f(1.,0.,0.),Math::pi / 2.f), Vector3f::I);
 	//Transform trans2(Vector3f(0.f, 1.f, 5.f), Quaternion(), Vector3f::I);
-	Transform trans2(Vector3f(0.f, -10.f, 10.f), Quaternion(), Vector3f::I);
+	Transform trans2(Vector3f(0.f, -10.f, 20.f), Quaternion(), Vector3f::I);
 
-	scene->CreateSceneObject(sphere, diffuse_mat, trans1);
+	//scene->CreateSceneObject(sphere, diffuse_mat, trans1);
 	//scene->CreateSceneObject(model , trans2);
 	scene->CreateSceneObject(model, trans2);
 
@@ -52,7 +52,7 @@ int main(){
 
 	//NormalIntegrator::Ptr integrator(new NormalIntegrator);
 	PathIntegrator::Ptr integrator(new PathIntegrator);
-	integrator->SetSamplePerPixel(128);
+	integrator->SetSamplePerPixel(64);
 	integrator->SetThreadNumber(16);
 	integrator->SetMaxDepth(5);
 	integrator->AttachCamera(camera);
@@ -61,7 +61,7 @@ int main(){
 
 	//integrator->ShowTangent();
 	//integrator->DebugBreakAtPixel(456, 214);
-	//integrator->DebugBreakAtPixel(450, 214);
+	//integrator->DebugBreakAtPixel(423, 6);
 	integrator->Render();
 
 

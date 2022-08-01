@@ -17,7 +17,7 @@ Vector3f ConstantEnvironmentLight::SampleIntensity(const Intersection& isect, co
 	Vector3f bitangent = Math::cross(isect.normal, isect.tangent);
 	
 	//TODO:encapsulate this to a function
-	*wi = isect.normal * y + isect.tangent * x + bitangent * z;
+	*wi = Math::normalize(isect.normal * y + isect.tangent * x + bitangent * z);
 	*pdf = 1.f / (2.f * Math::pi);
 
 	*tester = VisiblityTester(isect.adjustedPosition, *wi, infinity);

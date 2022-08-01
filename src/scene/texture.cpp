@@ -96,6 +96,7 @@ AL_PRIVATE Vector4f u32ToVector4(uint32 v) {
 }
 
 Vector4f BitTexture::At(uint32 x, uint32 y) {
+	al_assert(x < width && y < height, "BitTexture::At : out of boundary");
 	uint32 result = 0;
 	uint32 offset = (x + y * width) * dim;
 	result |= textureData[offset + 0];
@@ -118,7 +119,7 @@ Vector4f Texture::Sample(const Vector2f& _uv, TEXTURE_SAMPLER sampler) {
 	Vector2f uv = _uv;
 	uv.x = Math::clamp(uv.x, 0.f, 1.f), uv.y = Math::clamp(uv.y, 0.f, 1.f);
 	uv = Vector2f(uv.x * (float)width, uv.y * (float)height);
-	uint32 x = (uint32)uv.x, y = (uint32)uv.y;
+	uint32 x = min((uint32)uv.x, width - 1), y = min((uint32)uv.y, width - 1);
 	switch (sampler) {
 	case TEXTURE_SAMPLER_LOWER:
 		{
@@ -126,10 +127,10 @@ Vector4f Texture::Sample(const Vector2f& _uv, TEXTURE_SAMPLER sampler) {
 		}
 	case TEXTURE_SAMPLER_LINEAR:
 		{
-			Vector4f v0 = At(x		, y		),
-					 v1 = At(x + 1 , y		),
-					 v2 = At(x		, y + 1	),
-					 v3 = At(x + 1 , y + 1	);
+			Vector4f v0 = At(x								,y								),
+					 v1 = At(min(x + 1,width-1)	,y								),
+					 v2 = At(x								,min(y + 1,height-1)	),
+					 v3 = At(min(x + 1,width-1)	,min(y + 1,height-1)	);
 			float bx = Math::frac(uv.x), by = Math::frac(uv.y);
 			return Interpolate(
 				Interpolate(v0, v1, bx),
