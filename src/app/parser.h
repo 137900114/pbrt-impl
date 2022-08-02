@@ -5,6 +5,7 @@
 
 class ParamParser {
 public:
+	al_add_ptr_t(ParamParser);
 
 	ParamParser(int argc,const char** argvs);
 
@@ -17,7 +18,7 @@ public:
 			return InternalSet(key, ConvertFromWideString(value));
 		}
 		else {
-			return InternalSet(key, ToString(value));
+			return InternalSet(key, StringCast<T>::ToString(value));
 		}
 	}
 
@@ -25,7 +26,7 @@ public:
 	optional<T> Get(const String& key) {
 		if (auto res = InternalGet(key);res.has_value()) {
 			try {
-				return { FromString<T>(v) };
+				return { StringCast<T>::FromString(res.value()) };
 			}
 			catch (...) {
 				al_warn("fail to convert {} from string", ConvertToNarrowString(key));

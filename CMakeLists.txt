@@ -44,9 +44,9 @@ add_custom_command(TARGET Alex_exe POST_BUILD
   COMMAND_EXPAND_LISTS
   )
   
-add_dependencies(Alex_lib spdlog stb mmd)
+add_dependencies(Alex_lib spdlog stb mmd tinyxml2)
 add_dependencies(Alex_exe Alex_lib)
-target_link_libraries(Alex_lib spdlog stb assimp optick mmd)
+target_link_libraries(Alex_lib spdlog stb assimp optick mmd tinyxml2)
 target_link_libraries(Alex_exe Alex_lib)
 
 if(ENABLE_TEST)

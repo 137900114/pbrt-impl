@@ -50,39 +50,15 @@ std::wstring ConvertToWideString(const String& str) {
 }
 #endif
 
-template<typename T>
-String ToString(const T& o) {
-	if constexpr (std::is_same_v<T, std::string>) {
-		return ConvertFromNarrowString(o);
-	}
-	else constexpr(std::is_same_v<T, std::wstring>) {
-		return ConvertFromWideString(o);
-	}
-	else {
-#ifdef AL_USE_WIDE_STRING
-	return to_wstring(o);
-#else
-	return to_string(o);
-#endif
-	}
-}
 
-template<typename T>
-T  FromString(const String& o) {
-	if constexpr (std::is_same_v<T, std::string>) {
-		return ConvertToNarrowString(o);
+std::vector<String> SplitString(const String& str,Char dim) {
+	std::vector<String> res;
+	size_t offset = 0;
+	while (true) {
+		auto i = str.find_first_of(dim,offset);
+		res.push_back(str.substr(0, i));
+		offset = i + 1;
+		if (offset >= str.size()) break;
 	}
-	else constexpr(std::is_same_v<T, std::wstring>) {
-		return ConvertToWideString(o);
-	}
-	else if constexpr (std::is_same_v<T, uint32_t> ||
-	std::is_same_v<T, int>) {
-	return stoi(o);
-	}
-	else if constexpr (std::is_same_v<T, float>) {
-	return stof(o);
-	}
-	else if constexpr (std::is_same_v<T, double>) {
-	return stod(o);
-	}
+	return std::move(res);
 }

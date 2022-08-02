@@ -97,3 +97,5 @@ public:
 private:
 	const vector<ScenePrimitiveInfo>& scenePrimitives;
 };
+
+
