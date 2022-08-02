@@ -15,6 +15,8 @@ public:
 
 	virtual Vector3f SurfaceEmissionIntensity(const Intersection& isect, const Vector3f& w) override;
 
+	ScenePrimitive* GetPrimitive() { return primitive.get(); }
+
 	//this function should be called by Scene
 	//area light should know it's transform,
 	//but only when an area light is placed in a scene

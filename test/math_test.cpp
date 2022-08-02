@@ -324,7 +324,7 @@ TEST(BoundIntersectionTest, IntersectionTest) {
 			float py = (max_y - min_y - eta) * ((float)y / (float)cy - .5f) + oy;
 			Vector3f p(px, py, min_z);
 			Ray r(o, Math::normalize(p - o));
-			ASSERT_TRUE(Math::ray_intersect(bound, r)) << "ray must hit the bound fail at :" << x << "," << y;
+			ASSERT_TRUE(Math::ray_intersect_bound(bound, r)) << "ray must hit the bound fail at :" << x << "," << y;
 		}
 	}
 
@@ -345,7 +345,7 @@ TEST(BoundIntersectionTest, IntersectionTest) {
 			}
 			Vector3f p(px, py, min_z);
 			Ray r(o, Math::normalize(p - o));
-			EXPECT_FALSE(Math::ray_intersect(bound, r)) << "ray must not hit the bound fail at :" << x << "," << y;
+			EXPECT_FALSE(Math::ray_intersect_bound(bound, r)) << "ray must not hit the bound fail at :" << x << "," << y;
 		}
 	}
 }
@@ -401,6 +401,39 @@ TEST(SphereIntersectionTest, IntersectionTest) {
 	}
 }
 
+TEST(PlaneIntersectionTest,IntersectionTest) {
+	float max_x = 1.f, min_x = -1.f, max_y = 1.f, min_y = -1.f, z = 2.f;
+	uint32 cx = 1000, cy = 1000;
+	Vector3f ul(min_x, max_y, z), dl(min_x, min_y, z), dr(max_x, min_y, z);
+	
+	al_for(x, 0, cx) {
+		al_for(y, 0, cy) {
+			float px = (max_x - min_x) * ((float)x / (float)cx - .5f) * 2.f;
+			float py = (max_y - min_y) * ((float)y / (float)cy - .5f) * 2.f;
+			Vector3f p(px, py, z);
+			Vector3f pos; Vector2f uv; float t;
+			Ray r(Vector3f(), Math::normalize(p));
+			if (al_fequal(px, min_x) || al_fequal(py, max_y) || al_fequal(px, max_x)
+				|| al_fequal(py, min_y)) break;
+			if (px < max_x && px > min_x && py < max_y && py > min_y) {
+				EXPECT_TRUE(Math::ray_intersect_plane(dl, dr, ul, r, &t, &uv, &pos))
+					<< "ray fail to intersect at " << x << "," << y << ".";
+				EXPECT_TRUE(pos == p) << "invalid intersection point at " << x << "," << y
+					<< " expected " << p << " actual " << pos;
+				Vector2f expectUv = (Vector2f(px - min_x, py - min_y) / Vector2f(max_x - min_x, max_y - min_y));
+				EXPECT_TRUE(uv == expectUv) << "invalid intersection uv at " << x << "," << y <<
+					" expect " << expectUv << " actual " << uv;
+			}
+			else {
+				EXPECT_FALSE(Math::ray_intersect_plane(dl, dr, ul, r, &t, &uv, &pos))
+					<< " ray should not intersect at " << x << "," << y << "." << ".t is " << t;
+			}
+			Ray r2(Vector3f(), Math::normalize(Vector3f(px, py, -z)));;
+			EXPECT_FALSE(Math::ray_intersect_plane(dl, dr, ul, r2, &t, &uv, &pos))
+				<< " ray should not intersect at " << x << "," << y << ".t is " <<t;
+		}
+	}
+}
 
 TEST(TriangleIntersectionTest, IntersectionTest) {
 	float max_x = 1.f, min_x = -1.f, max_y = 1.f, min_y = -1.f, z = 2.f;
@@ -414,8 +447,8 @@ TEST(TriangleIntersectionTest, IntersectionTest) {
 	Vector3f position;
 
 	Intersection isect;
-	EXPECT_FALSE(Math::ray_intersect(v0, v1, v2, Ray(Vector3f(), Vector3f::Right), &t, &uv, &position));
-	EXPECT_FALSE(Math::ray_intersect(v0, v1, v2, Ray(Vector3f(), Vector3f::Up), &t, &uv, &position));
+	EXPECT_FALSE(Math::ray_intersect_triangle(v0, v1, v2, Ray(Vector3f(), Vector3f::Right), &t, &uv, &position));
+	EXPECT_FALSE(Math::ray_intersect_triangle(v0, v1, v2, Ray(Vector3f(), Vector3f::Up), &t, &uv, &position));
 	uint32 cx = 1000, cy = 1000;
 	al_for(x,0,cx) {
 		al_for(y,0,cy) {
@@ -427,14 +460,14 @@ TEST(TriangleIntersectionTest, IntersectionTest) {
 			Ray r2(Vector3f(), Math::normalize(p2));
 			if (al_fequal(px, min_x) || al_fequal(py, max_y)) break;
 			if (x > y || px < min_x || px > max_x || py < min_y || py > max_y) {
-				EXPECT_FALSE(Math::ray_intersect(v1, v2, v0, r, &t, &uv, &position)) << "triangle intersection fails at " << x << "," << y << "," << px << "," << py;
+				EXPECT_FALSE(Math::ray_intersect_triangle(v1, v2, v0, r, &t, &uv, &position)) << "triangle intersection fails at " << x << "," << y << "," << px << "," << py;
 			}
 			else if(x < y) {
-				EXPECT_TRUE(Math::ray_intersect(v1, v2, v0, r, &t, &uv, &position)) << "triangle intersection fails at " << x << "," << y << "," << px << "," << py;
+				EXPECT_TRUE(Math::ray_intersect_triangle(v1, v2, v0, r, &t, &uv, &position)) << "triangle intersection fails at " << x << "," << y << "," << px << "," << py;
 				EXPECT_TRUE(position == p) << "triangle intersection fails at " << x << "," << y << ","  << " intersection position should be " << p  << " rather than " << position;
 				EXPECT_TRUE(uv == expectUv) << "triangle intersection fails at " << x << "," << y << "," << " uv at intersection point should be " << expectUv << " rather than " << uv;
 			}
-			EXPECT_FALSE(Math::ray_intersect(v1, v2, v0, r2, &t, &uv, &position)) << "triangle should never be intersected at this case" << "(x,y) : " << "("  << x << "," << y << ")" << " t:" << t;
+			EXPECT_FALSE(Math::ray_intersect_triangle(v1, v2, v0, r2, &t, &uv, &position)) << "triangle should never be intersected at this case" << "(x,y) : " << "("  << x << "," << y << ")" << " t:" << t;
 		}
 	}
 

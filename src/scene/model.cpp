@@ -84,8 +84,11 @@ AL_PRIVATE Model::Ptr LoadByAssimp(const String& pathName) {
 	Assimp::Importer imp;
 
 	FILE* f;
-	if (errno_t error = _wfopen_s(&f, pathName.c_str(), L"rb"); error != 0) {
-		al_log("Model::Load : fail to open file {0} , reason {1}", ConvertToNarrowString(pathName),string(strerror(error)));
+	if (auto v = OpenFile(pathName, AL_STR("rb"));v.has_value()) {
+		f = v.value();
+	}
+	else {
+		al_log("Model::Load : fail to load model from {}",ConvertToNarrowString(pathName));
 		return nullptr;
 	}
 	fseek(f, 0, SEEK_END);
@@ -215,8 +218,11 @@ AL_PRIVATE bool supportedByAssimp(const wchar_t* extName) {
 
 AL_PRIVATE Model::Ptr LoadMMD(const String& pathName) {
 	FILE* f;
-	if (errno_t error = _wfopen_s(&f, pathName.c_str(), L"rb"); error != 0) {
-		al_log("Model::Load : fail to open file {0} , reason {1}", ConvertToNarrowString(pathName), string(strerror(error)));
+	if (auto v = OpenFile(pathName, AL_STR("rb"));v.has_value()) {
+		f = v.value();
+	}
+	else {
+		al_log("Model::Load : fail to open file {0}", ConvertToNarrowString(pathName));
 		return nullptr;
 	}
 	std::filebuf fb(f);
@@ -322,7 +328,7 @@ bool TriangleIntersect(const ScenePrimitiveInfo& info, const Ray& r, Intersectio
 	//v0,v1,v2 are under world coordinate so we don't need do any transform
 	Vertex v0 = info.data.triangle.v0, v1 = info.data.triangle.v1, v2 = info.data.triangle.v2;
 
-	if (!Math::ray_intersect(v0.position,v1.position,v2.position,r,
+	if (!Math::ray_intersect_triangle(v0.position,v1.position,v2.position,r,
 		&isect.t,&isect.localUv,&isect.position)) {
 		return false;
 	}

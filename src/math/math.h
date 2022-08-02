@@ -365,10 +365,14 @@ namespace Math {
     //v0 * (1 - u -  v) + v1 * u + v2 * v
     Vector4f interpolate3(const Vector4f& v0, const Vector4f& v1, const Vector4f& v2, const Vector2f& uv);
 
-    bool   ray_intersect(const Bound3f& bound,const Ray& r);
+    bool   ray_intersect_bound(const Bound3f& bound,const Ray& r);
     
     //intersect with triangle
-    bool   ray_intersect(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3, const Ray& r,
+    bool   ray_intersect_triangle(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3, const Ray& r,
+        param_out float* t, param_out Vector2f* uv, param_out Vector3f* position);
+
+    //intersect with plane
+    bool ray_intersect_plane(const Vector3f& dl,const Vector3f& dr,const Vector3f& ul, const Ray& r,
         param_out float* t, param_out Vector2f* uv, param_out Vector3f* position);
 
     Vector3f color_blend(const Vector3f& c1, const Vector3f& c2);

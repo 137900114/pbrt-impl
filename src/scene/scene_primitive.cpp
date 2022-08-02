@@ -11,6 +11,7 @@ Bound3f Sphere::GetBound(const Transform& trans) {
 	return b;
 }
 
+
 Intersection Sphere::Sample(const Transform& trans,const Intersection& p,
 	const Vector2f& seed, float* pdf) {
 	Vector3f offset = p.position - trans.GetPosition();
@@ -54,6 +55,8 @@ Intersection Sphere::Sample(const Transform& trans,const Intersection& p,
 	float alpha = Math::angle(sinAlpha, cosAlpha);
 	isect.uv = Vector2f(phi / 2 * Math::pi, alpha / Math::pi);
 	isect.localUv = isect.uv;
+	isect.adjustedPosition = isect.position + isect.normal * Math::eta * 5.f;
+	isect.tangent = GenerateTangent(isect.normal);
 
 	//uniform cone area
 	*pdf = 1.f / (2.f * Math::pi * (1 - cosThetaMax));
@@ -102,6 +105,7 @@ bool SphereIntersect(const ScenePrimitiveInfo& info,const Ray& r, Intersection& 
 	isect.localUv = isect.uv;
 	//derive normal by theta
 	isect.tangent = Vector3f(cosTheta * cosPhi, -sinTheta, cosTheta * sinPhi);
+	isect.adjustedPosition = isect.position + isect.normal * Math::eta * 5.f;
 
 	return true;
 }
@@ -134,4 +138,95 @@ Vector3f GenerateTangent(const Vector3f& normal) {
 		t = Math::cross(normal, Vector3f::Right);
 	}
 	return Math::normalize(t);
+}
+
+bool PlaneIntersect(const ScenePrimitiveInfo& info, const Ray& r, Intersection& isect) {
+	Vector3f& position = isect.position;
+	Vector2f& uv = isect.localUv;
+	float&    t = isect.t;
+	
+	if (!Math::ray_intersect_plane(info.data.plane.dl,info.data.plane.dr,
+		info.data.plane.ul,r,&t,&uv,&position)) {
+		return false;
+	}
+	
+	isect.normal = info.data.plane.n;
+	if (Math::dot(isect.normal,r.d) > 0.f) {
+		isect.normal = -1 * isect.normal;
+	}
+	isect.tangent = GenerateTangent(isect.normal);
+	isect.adjustedPosition = isect.position + isect.normal * Math::eta * 5.f;
+	isect.uv = isect.localUv;
+	return true;
+}
+
+Plane::Plane(float width, float height):width(width),height(height),invArea( 1.f / (width * height)) {
+	al_assert(width > 0.f && height > 0.f, "width and height of a plane should be greater than 0");
+}
+
+Bound3f Plane::GetBound(const Transform& trans) {
+	Vector3f p0(-width / 2.f, 0.f, height / 2.f), p1(width / 2.f, 0.f, height / 2.f),
+		p2(-width / 2.f, 0.f, -height / 2.f), p3(width / 2.f, 0.f, -height / 2.f);
+	p0 = Math::transform_point(trans.GetMatrix(), p0);
+	p1 = Math::transform_point(trans.GetMatrix(), p1);
+	p2 = Math::transform_point(trans.GetMatrix(), p2);
+	p3 = Math::transform_point(trans.GetMatrix(), p3);
+
+	Bound3f bound;
+	bound = Math::bound_merge(bound, p0);
+	bound = Math::bound_merge(bound, p1);
+	bound = Math::bound_merge(bound, p2);
+	bound = Math::bound_merge(bound, p3);
+	return bound;
+}
+
+Intersection Plane::Sample(const Transform& trans, const Intersection& p,
+	const Vector2f& seed, float* pdf) {
+	//normal in local space
+	Vector3f normal(0.f, 1.f, 0.f);
+	normal = Math::transform_vector(trans.GetTransInvMatrix(), normal);
+
+	//adjust to back face if the p is on the other side
+	if (Math::dot(normal,p.position - trans.GetPosition()) < 0.f) {
+		normal = -1 * normal;
+	}
+	Intersection isect;
+	//point in local space
+	Vector3f p1((seed.x - .5f) * width, 0.f, (seed.y - .5f ) * height);
+	p1 = Math::transform_point(trans.GetMatrix(), p1);
+	isect.position = p1;
+	isect.normal = normal;
+	isect.uv = Vector2f(seed.x, seed.y);
+	isect.adjustedPosition = isect.normal * Math::eta * 5.f + isect.position;
+	isect.tangent = GenerateTangent(isect.normal);
+	isect.localUv = isect.uv;
+
+	Vector3f dist = p1 - p.position;
+	float d2 = Math::dot(dist, dist);
+	//see note 14.2
+	*pdf = invArea * d2 / max(abs(Math::dot(dist, isect.normal)), 1e-8f);
+	return isect;
+}
+
+ScenePrimitiveInfo Plane::GeneratePrimitiveInfo(const Transform& transform,
+	Material::Ptr mat) {
+	ScenePrimitiveInfo info;
+	info.bound = GetBound(transform);
+	info.material = mat;
+	info.type = SCENE_PRIMITIVE_TYPE_PLANE;
+	info.intersector = PlaneIntersect;
+	
+	//local space
+	Vector3f ul(-width / 2.f, 0, height / 2.f);
+	Vector3f dl(-width / 2.f, 0,-height / 2.f);
+	Vector3f dr( width / 2.f, 0,-height / 2.f);
+	Vector3f n(0.f, 1.f, 0.f);
+
+	//from local space to world space
+	info.data.plane.ul = Math::transform_point(transform.GetMatrix(), ul);
+	info.data.plane.dl = Math::transform_point(transform.GetMatrix(), dl);
+	info.data.plane.dr = Math::transform_point(transform.GetMatrix(), dr);
+	info.data.plane.n  = Math::transform_vector(transform.GetTransInvMatrix(), n);
+
+	return info;
 }

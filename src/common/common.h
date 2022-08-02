@@ -1,18 +1,15 @@
 #pragma once
+#include "common/str.h"
+#include "common/file.h"
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
-#include <string>
 #include <memory>
 #include <new>
-#include <codecvt>
 #include <optional>
 using namespace std;
-
-#include <string.h>
 #include <stdint.h>
 
-#define AL_USE_WIDE_STRING
 
 using uint64 = uint64_t;
 using uint32 = uint32_t;
@@ -62,23 +59,6 @@ inline shared_ptr<spdlog::logger> _al_logger;
 #define al_warn(...) _al_logger->warn(__VA_ARGS__)
 #define al_assert(expr,...) if(!(expr)) {_al_logger->error(__VA_ARGS__);al_debug_break;exit(-1);}
 
-#ifdef AL_USE_WIDE_STRING
-using String = wstring;
-#define AL_STR(s) L##s
-#define AL_TO_STR(n) std::to_wstring(n)
-#else
-using String = std::string;
-#define AL_STR(s) s
-#define AL_TO_STR(n) std::to_string(n)
-#endif
-
-String ConvertFromNarrowString(const std::string& str);
-
-String ConvertFromWideString(const std::wstring str);
-
-std::string ConvertToNarrowString(const String& str);
-
-std::wstring ConvertToWideString(const String& str);
 
 //an output parameter
 #define param_out 

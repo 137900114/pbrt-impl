@@ -22,14 +22,17 @@ AL_PRIVATE bool SupportedBySTBFloatData(const fs::path& _ext) {
 	return extName == ".hdr";
 }
 
-AL_PRIVATE std::tuple<void*, int,int,int> LoadRawDataBySTB(const wchar_t* filepath, bool filp_vertically) {
+AL_PRIVATE std::tuple<void*, int,int,int> LoadRawDataBySTB(const String& filepath, bool filp_vertically) {
 	void* data = nullptr;
 	int height, width,comp;
 	stbi_set_flip_vertically_on_load(filp_vertically);
 	FILE* target_file = nullptr;
-	if (errno_t error = _wfopen_s(&target_file, filepath, L"rb"); error != 0) {
-		al_log("Texture::Load : fail to open file {0} error {1}", ConvertToNarrowString(filepath),error);
-		return std::move(std::make_tuple(nullptr, -1, -1,-1));
+	if (auto v = OpenFile(filepath, AL_STR("rb"));v.has_value()) {
+		target_file = v.value();
+	}
+	else {
+		al_log("Texture::Load : fail to open file {0}", ConvertToNarrowString(filepath));
+		return std::move(std::make_tuple(nullptr, -1, -1, -1));
 	}
 	data = stbi_load_from_file(target_file, &width, &height, &comp, 0);
 	fclose(target_file);
@@ -43,13 +46,13 @@ Texture::Ptr Texture::Load(const String& path) {
 		return nullptr;
 	}
 	if (SupportedBySTBBitData(p)) {
-		auto [data, width, height, comp] = LoadRawDataBySTB(path.c_str(), false);
+		auto [data, width, height, comp] = LoadRawDataBySTB(path, false);
 		if (!data) return nullptr;
 		Texture::Ptr texture(new BitTexture((uint8*)data, (uint32)width, (uint32)height, (uint32)comp));
 		return texture;
 	}
 	if (SupportedBySTBFloatData(p)) {
-		auto [data, width, height, comp] = LoadRawDataBySTB(path.c_str(), false);
+		auto [data, width, height, comp] = LoadRawDataBySTB(path, false);
 		if (!data) return nullptr;
 		Texture::Ptr texture(new FloatTexture((float*)data, (uint32)width, (uint32)height, (uint32)comp));
 		return texture;
@@ -198,8 +201,11 @@ bool Film::Save(const String& _path) {
 	fs::path path(_path);
 	String extName = ConvertFromNarrowString(path.extension().string());
 
-	if (errno_t error = _wfopen_s(&targetFile, _path.c_str(), L"wb"); error != 0) {
-		al_log("Texture::Load : fail to open file {0} error {1}", ConvertToNarrowString(_path), error);
+	if (auto v = OpenFile(_path, AL_STR("wb"));v.has_value()) {
+		targetFile = v.value();
+	}
+	else {
+		al_log("Texture::Load : fail to open file {}", ConvertToNarrowString(_path));
 		return false;
 	}
 	TextureWriteFuncContext ctx;

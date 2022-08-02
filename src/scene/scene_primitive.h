@@ -6,7 +6,8 @@
 
 enum SCENE_PRIMITIVE_TYPE {
 	SCENE_PRIMITIVE_TYPE_SPHERE,
-	SCENE_PRIMITIVE_TYPE_TRIANGLE
+	SCENE_PRIMITIVE_TYPE_TRIANGLE,
+	SCENE_PRIMITIVE_TYPE_PLANE
 };
 
 struct Vertex {
@@ -40,6 +41,9 @@ struct ScenePrimitiveInfo {
 		struct {
 			Vertex v0, v1, v2;
 		} triangle;
+		struct {
+			Vector3f ul, dr, dl,n;
+		} plane;
 	} data;
 
 	ScenePrimitiveInfo():intersector(nullptr),material(nullptr) {}
@@ -66,6 +70,8 @@ public:
 	al_add_ptr_t(ScenePrimitive);
 	virtual Bound3f GetBound(const Transform& trans) = 0;
 
+	//TODO refactor this function.we should not return a intersection information
+	//the pdf of angle
 	/// <summary>
 	/// Generate a random sample from seed to the intersection point p
 	/// This function is useful while importance sampling the area light sources
@@ -91,10 +97,19 @@ public:
 		Material::Ptr mat) = 0;
 };
 
-//class Plane : public ScenePrimitive {
-//public:
-//
-//};
+class Plane : public ScenePrimitive {
+public:
+	Plane(float width,float height);
+	virtual Bound3f GetBound(const Transform& trans) override;
+	virtual Intersection Sample(const Transform& trans,const Intersection& p,
+		const Vector2f& seed,float *pdf);
+	virtual ScenePrimitiveInfo GeneratePrimitiveInfo(const Transform& transform,
+		Material::Ptr mat) override;
+private:
+	float width, height;
+	//useful while calculating pdf
+	float invArea;
+};
 
 class Sphere : public ScenePrimitive {
 public:

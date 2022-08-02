@@ -103,6 +103,7 @@ SceneObjectID Scene::CreateSceneObject(ScenePrimitive::Ptr primitive, Material::
 		//TODO : Werid function call.May refactor it later
 		lightSource->SetTransform(sobj->GetTransform());
 		lightSources.push_back(lightSource);
+		al_assert(lightSource->GetPrimitive() == primitive.get(), "material's area light's primitive should match scene object's primitive");
 	}
 
 	sceneBuildFlag = false;

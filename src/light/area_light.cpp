@@ -14,6 +14,11 @@ Vector3f AreaLight::SampleIntensity(const Intersection& isect, const Vector2f& s
 	*tester = VisiblityTester(sample.adjustedPosition, isect.adjustedPosition);
 	*wi = Math::normalize(isect.adjustedPosition - sample.adjustedPosition);
 
+	//if the sample point is on the other side return 0.f
+	if (Math::dot(*wi,isect.normal) > 0.f) {
+		return Vector3f();
+	}
+
 	return intensity;
 }
 

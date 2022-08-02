@@ -238,7 +238,7 @@ namespace Math {
     }
 
 
-    bool   ray_intersect(const Bound3f& bound, const Ray& r) {
+    bool   ray_intersect_bound(const Bound3f& bound, const Ray& r) {
         const Vector3f& o = r.o;
         
         uint32 sign[3];
@@ -274,7 +274,7 @@ namespace Math {
         return true;
     }
 
-    bool   ray_intersect(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Ray& r,
+    bool   ray_intersect_triangle(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Ray& r,
         param_out float* t, param_out Vector2f* uv, param_out Vector3f* position) {
        
         //from paper https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
@@ -302,6 +302,38 @@ namespace Math {
         *position = *t * r.d + r.o;
 
         return *t > 0.f;  //this ray hits the triangle 
+    }
+
+    //double face plane intersection 
+    bool ray_intersect_plane(const Vector3f& v0/*ul*/, const Vector3f& v1/*dr*/, const Vector3f& v2/*dl*/,
+        const Ray& r,param_out float* t, param_out Vector2f* uv, param_out Vector3f* position) {
+
+        //copied from triangle intersection
+        //only thing we have to do is just modify the last if from (u + v) > 1.f to v > 1.f
+        Vector3f e1 = v1 - v0;
+        Vector3f e2 = v2 - v0;
+        Vector3f o = r.o - v0;
+
+        Vector3f cross_d_e2 = Math::cross(r.d, e2);
+        float det = Math::dot(cross_d_e2, e1);
+
+        if (al_fequal(det, 0)) {
+            return false;
+        }
+        float invDet = 1.f / det;
+        float u, v;
+        u = Math::dot(cross_d_e2, o) * invDet;
+        if (u < 0.f || u > 1.f) return false;
+
+        Vector3f cross_o_e1 = Math::cross(o, e1);
+        v = Math::dot(cross_o_e1, r.d) * invDet;
+        if (v < 0.f || v > 1.f) return false;
+
+        *t = Math::dot(cross_o_e1, e2) * invDet;
+        *uv = Vector2f(u, v);
+        *position = *t * r.d + r.o;
+
+        return *t > 0.f;  //this ray hits the plane 
     }
 
 

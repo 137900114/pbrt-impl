@@ -188,29 +188,22 @@ bool BVHTree::Intersect(const Ray& r,BVHIntersectInfo& info) {
 
     bool intersected = false;
 
-    //delete
-    uint32 count = 0;
-    //delete end
     while (toVisitCount != 0 && toVisitCount < maxiumDepth) {
         BVHLeafNode& node = leafNodes[toVisit[--toVisitCount]];
     
-        //delete
-        count++;
-        //delete end
-        if (Math::ray_intersect(node.bound, r)) {
+        if (Math::ray_intersect_bound(node.bound, r)) {
             if (node.isLeaf) {
-                BVHPrimitiveInfo& primInfo = primitiveInfo[node.primitiveIndex];
-                al_for(i,0,node.primitiveCount) {
-                    if (Math::ray_intersect(primInfo.primitive.aabb, r)) {
+                al_for(i, 0, node.primitiveCount) {
+                    BVHPrimitiveInfo& primInfo = primitiveInfo[node.primitiveIndex + i];
+                    if (Math::ray_intersect_bound(primInfo.primitive.aabb, r)) {
                         Intersection isect;
-                        bool nodeIsect = intersector->Intersect(r, primInfo.primitiveIndex + i, isect);
+                        bool nodeIsect = intersector->Intersect(r, primInfo.primitiveIndex, isect);
                         intersected |= nodeIsect;
                         if (nodeIsect && isect.t < info.intersection.t) {
                             info.primitiveIndex = primInfo.primitiveIndex;
                             info.intersection = isect;
                         }
                     }
-                    
                 }
             }
             else {
@@ -225,13 +218,6 @@ bool BVHTree::Intersect(const Ray& r,BVHIntersectInfo& info) {
             }
         }
     }
-    //delete
-    if(count > 100)
-        //al_log("bvh depth {}",count);
-    if (count > 2000) {
-        __debugbreak();
-    }
-    //delete end
 
     return intersected;
 }

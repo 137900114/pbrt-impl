@@ -91,18 +91,9 @@ RTTI_STRUCT_END
 Vector3f LambertBSDF::Sample(Material* mat, const SurfaceIntersection& isect,
 	const Vector2f& seed, const Vector3f& wo, float* pdf) {
 	//generate concentric disk sample
-	// r = x
-	// theta = y / x * (pi / 4)
-	Vector2f p = seed * 2.f - Vector2f(1.f, 1.f);
-	float r, theta;
-	if (std::abs(p.x) > std::abs(p.y)) {
-		r = p.x;
-		theta = p.y / p.x * (Math::pi / 4.f);
-	}
-	else {
-		r = p.y;
-		theta = (Math::pi / 2.f) - (Math::pi / 4.f) * p.x / p.y;
-	}
+	float r = sqrtf(seed.x);
+	float theta = 2.f * Math::pi * seed.y;
+
 	//map it to sphere
 	Vector3f rv;
 	rv.x = r * cosf(theta);

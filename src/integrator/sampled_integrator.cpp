@@ -169,7 +169,8 @@ Vector3f DirectLightBSDFImportanceSample(const SurfaceIntersection& isect, const
 	Vector3f L;
 	//scene intersection test is time consuming
 	if (!Math::zero(bsdf)) {
-		Ray visTester(isect.isect.position, wi);
+		//push the intersection point a little forward to prevent triangle's self intersection
+		Ray visTester(isect.isect.adjustedPosition, wi);
 		SurfaceIntersection testRes;
 		if (scene->Intersect(visTester, testRes)) {
 			auto v = testRes.material->GetEmission();
