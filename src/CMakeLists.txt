@@ -1,5 +1,5 @@
 target_include_directories(Alex_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(Alex_exe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(Alex PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(app)
 add_subdirectory(accelerator)

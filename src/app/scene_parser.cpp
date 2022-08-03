@@ -16,7 +16,7 @@ AL_PRIVATE Material::Ptr ParseMaterial(ScenePrimitive::Ptr primitive,XMLElement*
 	XMLElement* typeNode;
 	LambertBSDF::Ptr bsdf;
 	getNotNullChildElement(typeNode, materialNode, "bsdf");
-	if (strcmp(typeNode->GetText(),"lambert")) {
+	if (strcmp(typeNode->GetText(),"lambert") == 0) {
 		XMLElement* diffuseNode;
 		getNotNullChildElement(diffuseNode, materialNode, "diffuse");
 		vector<String> dif = SplitString(ConvertFromNarrowString(diffuseNode->GetText()), AL_STR(','));
@@ -32,7 +32,7 @@ AL_PRIVATE Material::Ptr ParseMaterial(ScenePrimitive::Ptr primitive,XMLElement*
 	AreaLight::Ptr light = nullptr;
 	if (auto v = materialNode->FirstChildElement("area_light");v != nullptr) {
 		XMLElement* intensityNode;
-		getNotNullChildElement(intensityNode, materialNode, "diffuse");
+		getNotNullChildElement(intensityNode, materialNode, "area_light");
 		vector<String> intens = SplitString(ConvertFromNarrowString(intensityNode->GetText()), AL_STR(','));
 		Vector3f intensity(StringCast<float>::FromString(intens[0]), StringCast<float>::FromString(intens[1]), StringCast<float>::FromString(intens[2]));
 
@@ -56,7 +56,7 @@ AL_PRIVATE Transform ParseTransform(XMLElement* objectNode) {
 	getNotNullChildElement(rotationElement, transformElement, "rotation");
 	vector<String> rot = SplitString(ConvertFromNarrowString(rotationElement->GetText()), AL_STR(','));
 	Quaternion rotation(Vector3f(StringCast<float>::FromString(rot[0]), StringCast<float>::FromString(rot[1]), StringCast<float>::FromString(rot[2])),
-		StringCast<float>::FromString(rot[3]));
+		StringCast<float>::FromString(rot[3]) * Math::pi / 180.f);
 	getNotNullChildElement(scaleElement, transformElement, "scale");
 	vector<String> scl = SplitString(ConvertFromNarrowString(scaleElement->GetText()), AL_STR(','));
 	Vector3f scale(StringCast<float>::FromString(scl[0]), StringCast<float>::FromString(scl[1]), StringCast<float>::FromString(scl[2]));
@@ -68,7 +68,7 @@ AL_PRIVATE Transform ParseTransform(XMLElement* objectNode) {
 optional<tuple<Scene::Ptr, Camera::Ptr>>
 	SceneLoader::Load(const String& path, ParamParser::Ptr parser){
 	FILE* f = nullptr;
-	if (auto v = OpenFile(path,AL_STR("w"));v.has_value() ) {
+	if (auto v = OpenFile(path,AL_STR("r"));v.has_value() ) {
 		f = v.value();
 	}
 	else {
@@ -76,8 +76,15 @@ optional<tuple<Scene::Ptr, Camera::Ptr>>
 		return {};
 	}
 
+	uint32 fileSize = GetFileSize(f);
+	char* data = (char*)malloc(fileSize + 1);
+	memset(data, 0, fileSize);
+	data[fileSize] = '\0';
+	fread(data, fileSize, 1, f);
+	Close(f);
+	
 	XMLDocument doc;
-	if (auto v = doc.LoadFile(f);v != XML_SUCCESS) {
+	if (auto v = doc.Parse(data); v != XML_SUCCESS) {
 		static const char* xmlErrorStr[] = {
 			"XML_SUCCESS",
 			"XML_NO_ATTRIBUTE",
@@ -99,8 +106,9 @@ optional<tuple<Scene::Ptr, Camera::Ptr>>
 			"XML_NO_TEXT_NODE",
 			"XML_ELEMENT_DEPTH_EXCEEDED"
 		};
-		al_log("SceneLoader::Load : fail to load scene from {} reason : {}", ConvertToNarrowString(path),
+		al_warn("SceneLoader::Load : fail to load scene from {} reason : {}", ConvertToNarrowString(path),
 			string(xmlErrorStr[v]));
+		return {};
 	}
 
 	Scene::Ptr scene(new Scene);
@@ -174,6 +182,7 @@ optional<tuple<Scene::Ptr, Camera::Ptr>>
 
 			scene->CreateSceneObject(prim, mat, trans);
 		}
+		objectNode = objectNode->NextSiblingElement("object");
 	}
 
 	uint32 width = 1000,height = 1000;

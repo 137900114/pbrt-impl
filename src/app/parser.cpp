@@ -4,7 +4,7 @@
 
 bool ParamParser::Dump(const String& path) {
 	FILE* f;
-	if (auto v = OpenFile(path,AL_STR("r"));v.has_value()) {
+	if (auto v = OpenFile(path,AL_STR("w"));v.has_value()) {
 		f = v.value();
 	}
 	else {
@@ -13,12 +13,15 @@ bool ParamParser::Dump(const String& path) {
 	}
 	String content;
 
-	for (auto p : table) {
-		content += p.first + AL_STR("=") + p.second + AL_STR("\n");
+	for (auto p : dumpList) {
+		if (table.count(p) == 0)
+			continue;
+		content += p + AL_STR("=") + table[p] + AL_STR("\n");
 	}
 	//convert string to utf-8 encoding
-	string utf8Content = ConvertToNarrowString(path);
+	string utf8Content = ConvertToNarrowString(content);
 	fwrite(utf8Content.c_str(), utf8Content.size(), 1, f);
+	Close(f);
 	return true;
 }
 
@@ -32,8 +35,10 @@ void ParamParser::Load(const String& path) {
 		return;
 	}
 	uint32 fsize = GetFileSize(f);
-	char* buffer = (char*)malloc(fsize);
+	char* buffer = (char*)malloc(fsize + 1);
+	memset(buffer, 0, fsize);
 	fread(buffer, fsize, 1, f);
+	buffer[fsize] = '\0';
 	String content = ConvertFromNarrowString(buffer);
 #ifdef AL_USE_WIDE_STRING
 	wstringstream ss(content);
@@ -49,6 +54,7 @@ void ParamParser::Load(const String& path) {
 	}
 
 	free(buffer);
+	Close(f);
 }
 
 void ParamParser::InternalSet(const String& key, const String& value) {
@@ -71,6 +77,9 @@ ParamParser::ParamParser(int argc, const char** argvs, uint32 tableCount, Parame
 		}
 		if (table[i].default_value) {
 			this->table[ConvertFromNarrowString(table[i].key)] = ConvertFromNarrowString(table[i].default_value);
+		}
+		if (table[i].should_be_dumped) {
+			dumpList.push_back(ConvertFromNarrowString(table[i].key));
 		}
 	}
 	al_for(i,0,argc) {

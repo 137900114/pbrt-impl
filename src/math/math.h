@@ -218,7 +218,7 @@ struct Bound3f {
 
 struct Transform {
     al_add_ptr_t(Transform);
-    Transform() :quat(Vector3f(0., 1., 0.), 0.) { RecomputeMatrix(); }
+    Transform() :quat(Vector3f(0., 1., 0.), 0.),scale(Vector3f::I) { RecomputeMatrix(); }
     Transform(const Vector3f& position, const Quaternion& quat, const Vector3f& scale) :
         position(position), quat(quat), scale(scale) {
         RecomputeMatrix();

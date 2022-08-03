@@ -56,9 +56,14 @@ std::vector<String> SplitString(const String& str,Char dim) {
 	size_t offset = 0;
 	while (true) {
 		auto i = str.find_first_of(dim,offset);
-		res.push_back(str.substr(0, i));
-		offset = i + 1;
-		if (offset >= str.size()) break;
+		if (i >= str.size()) {
+			res.push_back(str.substr(offset, str.size() - offset));
+			break;
+		}
+		else {
+			res.push_back(str.substr(offset, i - offset));
+			offset = i + 1;
+		}
 	}
 	return std::move(res);
 }

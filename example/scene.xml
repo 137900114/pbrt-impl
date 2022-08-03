@@ -1,0 +1,67 @@
+<scene>
+    <model name= "model">model/model.pmx</model>
+    <object>
+        <plane>
+            <width>40</width>
+            <height>40</height>
+        </plane>
+        <material>
+            <bsdf>lambert</bsdf>
+            <diffuse>0.023529,0.4,1</diffuse>
+        </material>
+        <transform>
+            <position>0,-10,13</position>
+            <rotation>1,0,0,0</rotation>
+            <scale>1,1,1</scale>
+        </transform>
+    </object>
+
+    <object>
+        <plane>
+            <width>10</width>
+            <height>10</height>
+        </plane>
+        <material>
+            <bsdf>lambert</bsdf>
+            <diffuse>0.8,1,1</diffuse>
+            <area_light>5,5,5</area_light>
+        </material>
+        <transform>
+            <position>-10,-5,13</position>
+            <rotation>0,0,1,90</rotation>
+            <scale>1,1,1</scale>
+        </transform>
+    </object>
+
+    <object>
+        <plane>
+            <width>30</width>
+            <height>10</height>
+        </plane>
+        <material>
+            <bsdf>lambert</bsdf>
+            <diffuse>0.5,1,0</diffuse>
+        </material>
+        <transform>
+            <position>8,-7.5,13</position>
+            <rotation>0,0,1,90</rotation>
+            <scale>1,1,1</scale>
+        </transform>
+    </object>
+    <object>
+        <model>model</model>
+        <transform>
+            <position>0,-10,13</position>
+            <rotation>1,0,0,0</rotation>
+            <scale>0.5,0.5,0.5</scale>
+        </transform>
+    </object>
+
+    <camera>
+        <transform>
+            <position>0,0,0</position>
+            <rotation>1,0,0,0</rotation>
+            <scale>1,1,1</scale>
+        </transform>
+    </camera>
+</scene>

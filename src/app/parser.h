@@ -10,6 +10,7 @@ struct ParameterTable {
 	const char* discribtion;
 	const char* default_value;
 	function<void(ParamParser*,ParameterTable*,uint32)> callback;
+	bool  should_be_dumped;
 	bool  contains_value;
 	uint32 name_count;
 	const char* names[4];
@@ -47,7 +48,7 @@ public:
 			}
 		}
 		else {
-			al_warn("fail to find key {}", ConvertToNarrowString(key));
+			//al_warn("fail to find key {}", ConvertToNarrowString(key));
 			return {};
 		}
 		
@@ -67,4 +68,5 @@ private:
 	optional<String> InternalGet(const String& key);
 
 	map<String, String> table;
+	vector<String> dumpList;
 };
