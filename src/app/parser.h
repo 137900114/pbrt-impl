@@ -3,11 +3,24 @@
 #include <map>
 //command line arguments parser
 
+class ParamParser;
+
+struct ParameterTable {
+	const char* key;
+	const char* discribtion;
+	const char* default_value;
+	function<void(ParamParser*,ParameterTable*,uint32)> callback;
+	bool  contains_value;
+	uint32 name_count;
+	const char* names[4];
+};
+
+
 class ParamParser {
 public:
 	al_add_ptr_t(ParamParser);
 
-	ParamParser(int argc,const char** argvs);
+	ParamParser(int argc,const char** argvs,uint32 tableCount,ParameterTable* table);
 
 	template<typename T>
 	void Set(const String& key, const T& value) {
@@ -38,6 +51,13 @@ public:
 			return {};
 		}
 		
+	}
+
+	template<typename T>
+	T Require(const String& key) {
+		auto v = this->Get<T>(key);
+		al_assert(v.has_value(), "this parameter must have a value");
+		return v.value();
 	}
 
 	bool Dump(const String& path);

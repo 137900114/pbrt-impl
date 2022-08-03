@@ -61,3 +61,31 @@ optional<String> ParamParser::InternalGet(const String& key) {
 	}
 	return {};
 }
+
+ParamParser::ParamParser(int argc, const char** argvs, uint32 tableCount, ParameterTable* table) {
+	map<String, ParameterTable*> parameterTable;
+	al_for(i,0,tableCount) {
+		al_for(j,0,table[i].name_count) {
+			parameterTable[ConvertFromNarrowString(table[i].names[j])]
+				= table + i;
+		}
+		if (table[i].default_value) {
+			this->table[ConvertFromNarrowString(table[i].key)] = ConvertFromNarrowString(table[i].default_value);
+		}
+	}
+	al_for(i,0,argc) {
+		String argv = ConvertFromNarrowString(argvs[i]);
+		if (auto res = parameterTable.find(argv);res != parameterTable.end()) {
+			ParameterTable* t = res->second;
+			if (i + 1 < argc && t->contains_value) {
+				const char* f = argvs[i + 1];
+				String value = ConvertFromNarrowString(argvs[i + 1]);
+				this->table[ConvertFromNarrowString(t->key)] = value;
+				i = i + 1;
+			}
+			if (t->callback != nullptr) {
+				t->callback(this, table, tableCount);
+			}
+		}
+	}
+}
