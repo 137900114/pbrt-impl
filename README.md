@@ -20,7 +20,7 @@ TODO:
 
 #### GPU Raytracing(考虑使用vulkan)
 
-![pic](example\output.png)
+![pic](example/output.png)
 
 model reference:
 
