@@ -5,6 +5,9 @@ add_subdirectory(optick)
 add_subdirectory(mmd)
 add_subdirectory(tinyxml2)
 
+
+message(STATUS "add ${CMAKE_CURRENT_SOURCE_DIR}/assimp/include to include directory")
+target_include_directories(Alex_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/assimp/include)
 message(STATUS "add ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include to include directory")
 target_include_directories(Alex_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)
 message(STATUS "add ${CMAKE_CURRENT_SOURCE_DIR}/stb/include to include directory")
