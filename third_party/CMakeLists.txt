@@ -9,7 +9,7 @@ message(STATUS "add ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include to include direct
 target_include_directories(Alex_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)
 message(STATUS "add ${CMAKE_CURRENT_SOURCE_DIR}/stb/include to include directory")
 target_include_directories(Alex_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/stb/include)
-message(STATUS "add ${CMAKE_CURRENT_SOURCE_DIR}/optick/include to include directory")
+message(STATUS "add ${CMAKE_CURRENT_SOURCE_DIR}/optick/src to include directory")
 target_include_directories(Alex_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/optick/include)
 message(STATUS "add ${CMAKE_CURRENT_SOURCE_DIR}/mmd/include to include directory")
 target_include_directories(Alex_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/mmd/include)

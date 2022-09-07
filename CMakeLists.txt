@@ -39,14 +39,14 @@ add_custom_command(TARGET Alex POST_BUILD
   COMMAND_EXPAND_LISTS
   )
 
-add_custom_command(TARGET Alex POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optick>  $<TARGET_FILE_DIR:Alex>
-  COMMAND_EXPAND_LISTS
-  )
+# add_custom_command(TARGET Alex POST_BUILD
+#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optick>  $<TARGET_FILE_DIR:Alex>
+#   COMMAND_EXPAND_LISTS
+#   )
   
-add_dependencies(Alex_lib spdlog stb mmd tinyxml2)
+add_dependencies(Alex_lib spdlog stb mmd tinyxml2 OptickCore)
 add_dependencies(Alex Alex_lib)
-target_link_libraries(Alex_lib spdlog stb assimp optick mmd tinyxml2)
+target_link_libraries(Alex_lib spdlog stb assimp OptickCore mmd tinyxml2)
 target_link_libraries(Alex Alex_lib)
 
 if(ENABLE_TEST)
