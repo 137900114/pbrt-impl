@@ -2,6 +2,8 @@
 
 set(test_cases math_test  multithread_test bvh_test)
 
+message("***testing include directory : ${GTEST_INCLUDE}")
+
 foreach(test_case ${test_cases})
   message("adding test case ${test_case}...")
 
@@ -11,7 +13,7 @@ foreach(test_case ${test_cases})
     )
   target_link_libraries(
       ${test_case}
-      ${gtest}
+      gtest
       Alex_lib
     )
 
