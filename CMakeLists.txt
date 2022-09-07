@@ -30,7 +30,7 @@ endforeach()
 #macro that marks some release only code
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DRELEASE")
 
-add_subdirectory(thrid_party)
+add_subdirectory(third_party)
 add_subdirectory(src)
 
 #copy the dll file
