@@ -3,7 +3,7 @@ set (CMAKE_CXX_STANDARD 17)
 
 project(Alex)
 
-add_library(Alex_lib "")
+add_library(Alex_lib STATIC "")
 add_executable(Alex "")
 
 option(ENABLE_TEST "enable unit test cases" ON)
@@ -30,23 +30,32 @@ endforeach()
 #macro that marks some release only code
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DRELEASE")
 
-add_subdirectory(thrid_party)
+add_subdirectory(third_party)
 add_subdirectory(src)
 
 #copy the dll file
 add_custom_command(TARGET Alex POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:assimp>  $<TARGET_FILE_DIR:Alex>
-  COMMAND_EXPAND_LISTS
-  )
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:assimp>  $<TARGET_FILE_DIR:Alex>
+   COMMAND_EXPAND_LISTS
+   )
 
-add_custom_command(TARGET Alex POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optick>  $<TARGET_FILE_DIR:Alex>
-  COMMAND_EXPAND_LISTS
-  )
+ add_custom_command(TARGET Alex POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:OptickCore>  $<TARGET_FILE_DIR:Alex>
+   COMMAND_EXPAND_LISTS
+   )
+   add_custom_command(TARGET Alex POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spdlog>  $<TARGET_FILE_DIR:Alex>
+   COMMAND_EXPAND_LISTS
+   )
+
+ add_custom_command(TARGET Alex POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:tinyxml2>  $<TARGET_FILE_DIR:Alex>
+   COMMAND_EXPAND_LISTS
+   )
   
-add_dependencies(Alex_lib spdlog stb mmd tinyxml2)
+add_dependencies(Alex_lib spdlog stb mmd assimp OptickCore tinyxml2)
 add_dependencies(Alex Alex_lib)
-target_link_libraries(Alex_lib spdlog stb assimp optick mmd tinyxml2)
+target_link_libraries(Alex_lib spdlog stb OptickCore mmd assimp tinyxml2)
 target_link_libraries(Alex Alex_lib)
 
 if(ENABLE_TEST)

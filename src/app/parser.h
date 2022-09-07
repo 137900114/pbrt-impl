@@ -57,7 +57,7 @@ public:
 	template<typename T>
 	T Require(const String& key) {
 		auto v = this->Get<T>(key);
-		al_assert(v.has_value(), "this parameter must have a value");
+		al_assert(v.has_value(), "parameter parser : '{}' must have a value", ConvertToNarrowString(key));
 		return v.value();
 	}
 

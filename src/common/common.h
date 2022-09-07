@@ -63,7 +63,7 @@ inline shared_ptr<spdlog::logger> _al_logger;
 //an output parameter
 #define param_out 
 
-#include "optick/optick.h"
+#include "optick.h"
 
 //CPU
 #define al_profile_frame(name)				OPTICK_FRAME(name)

@@ -2,6 +2,8 @@
 
 set(test_cases math_test  multithread_test bvh_test)
 
+message("***testing include directory : ${GTEST_INCLUDE}")
+
 foreach(test_case ${test_cases})
   message("adding test case ${test_case}...")
 
@@ -11,7 +13,7 @@ foreach(test_case ${test_cases})
     )
   target_link_libraries(
       ${test_case}
-      ${gtest}
+      gtest
       Alex_lib
     )
 
@@ -28,6 +30,26 @@ foreach(test_case ${test_cases})
     COMMAND
       $<TARGET_FILE_DIR:${test_case}>/${test_case}
     )
+
+add_custom_command(TARGET ${test_case} POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:gtest>  $<TARGET_FILE_DIR:${test_case}>
+   COMMAND_EXPAND_LISTS
+   )
+
+   add_custom_command(TARGET ${test_case} POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:assimp>  $<TARGET_FILE_DIR:${test_case}>
+   COMMAND_EXPAND_LISTS
+   )
+
+ add_custom_command(TARGET ${test_case} POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:OptickCore>  $<TARGET_FILE_DIR:${test_case}>
+   COMMAND_EXPAND_LISTS
+   )
+
+   add_custom_command(TARGET ${test_case} POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:spdlog>  $<TARGET_FILE_DIR:${test_case}>
+   COMMAND_EXPAND_LISTS
+   )
 
   message("test case ${test_case} is added")
 endforeach()
